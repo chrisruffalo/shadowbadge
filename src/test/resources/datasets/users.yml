@@ -1,0 +1,13 @@
+consumers:
+  - id: "0001-000-000-000"
+    email: "test@shadowbadge.com"
+    authId: "someKeycloakId01"
+    displayName: "Test User Alpha One"
+  - id: "0001-000-000-333"
+    email: "test@shadowbadge.com"
+    authId: "someKeycloakId02"
+    displayName: "Test User Beta Two"
+  - id: "delete-me"
+    email: "delete@delete.com"
+    authId: "deleteDeleteDelete"
+    displayName: "Delete Me"

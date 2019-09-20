@@ -1,3 +1,9 @@
-# do not import intellij stuff
+# do not commit intellij stuff
 **/.idea
 *.iml
+
+# do not commit generated templates java files
+src/main/java/**/templates/*.java
+
+# do not commit target dir
+target

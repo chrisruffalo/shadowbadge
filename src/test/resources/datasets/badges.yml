@@ -1,0 +1,12 @@
+badges:
+  - id: "test-id-1"
+    badgeId: "test-id-1-badge"
+    displayName: "Test Group"
+  - id: "i-have-info"
+    badgeId: "i-have-info-badge"
+    displayName: "Test Info Badge"
+    heading: "My Name"
+    title: "Build Bot"
+    groupName: "Dev"
+    location: "Somewhere, Earth"
+    tagline: "123, 123, test"

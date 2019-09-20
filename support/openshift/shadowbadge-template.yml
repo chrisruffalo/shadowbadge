@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: Template
+metdata:
+  name: shadowbadge-template
+objects:
+# image stream target for maven builds
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: is-shadowbadge-ui-${OUTPUT_TYPE}
+    labels:
+      app: shadowbadge-ui-${OUTPUT_TYPE}
+    spec:
+      lookupPolicy:
+        local: false
+# build config target for maven builds
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: bc-shadowbadge-ui-${OUTPUT_TYPE}
+    labels:
+      app: shadowbadge-ui-${OUTPUT_TYPE}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: is-shadowbadge-ui-${OUTPUT_TYPE}:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: SerialLatestOnly
+    source:
+      binary: {}
+      type: Binary
+    strategy:
+      type: Docker
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: ${DOCKER_IMAGE}
+    triggers: []
+# service configuration
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: service-shadowbadge-ui-${OUTPUT_TYPE}
+    labels:
+      app: shadowbadge-ui-${OUTPUT_TYPE}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: shadowbadge-ui-${OUTPUT_TYPE}
+    sessionAffinity: None
+    type: ClusterIP
+# deployment configuration for shadowbadge
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    name: dc-shadowbadge-ui-${OUTPUT_TYPE}
+    labels:
+      app: shadowbadge-ui-${OUTPUT_TYPE}
+      type: ${OUTPUT_TYPE}
+  spec:
+    replicas: ${{REPLICA_COUNT}}
+    revisionHistoryLimit: 5
+    selector:
+      deploymentConfig: dc-shadowbadge-ui-${OUTPUT_TYPE}
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: shadowbadge-ui-${OUTPUT_TYPE}
+          deploymentConfig: dc-shadowbadge-ui-${OUTPUT_TYPE}
+      spec:
+        containers:
+        - name: shadowbadge-ui-${OUTPUT_TYPE}
+          image: "image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/is-shadowbadge-ui-${OUTPUT_TYPE}"
+          imagePullPolicy: Always
+          # override quarkus environment variables to connect to postgres
+          env:
+          - name: QUARKUS_DATASOURCE_URL
+            value: "jdbc:postgresql://${POSTGRES_SERVICE}:${POSTGRES_PORT}/shadowbadge"
+          - name: QUARKUS_DATASOURCE_USERNAME
+            value: "${POSTGRES_USER}"
+          - name: QUARKUS_DATASOURCE_PASSWORD
+            value: "${POSTGRES_PASSWORD}"
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+        triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+            - shadowbadge-ui-${OUTPUT_TYPE}
+            from:
+              kind: ImageStreamTag
+              name: is-shadowbadge-ui-${OUTPUT_TYPE}:latest
+        - type: ConfigChange
+parameters:
+- name: OUTPUT_TYPE
+  displayName: Output Type
+  description: Type of output, either 'native' or 'jvm'
+  value: jvm
+  required: true
+- name: DOCKER_IMAGE
+  displayName: Upstream Source Docker Image
+  description: Docker image, either 'fabric8/java-centos-openjdk8-jdk:latest' for JVM or 'registry.access.redhat.com/ubi8/ubi-minimal:latest' for native. (This value should match the FROM statement in the Docker iamge)
+  value: "fabric8/java-centos-openjdk8-jdk:latest"
+  required: true
+- name: REPLICA_COUNT
+  value: "0"
+  required: true
+- name: POSTGRES_SERVICE
+  required: true
+- name: POSTGRES_PORT
+  value: "5432"
+  required: true
+- name: POSTGRES_DB
+  value: "shadowbadge"
+  required: true
+- name: POSTGRES_USER
+  required: true
+- name: POSTGRES_PASSWORD
+  required: true
