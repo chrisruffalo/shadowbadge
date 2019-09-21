@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html th:replace="~{templates/base.html :: base_page(~{::title}, ~{::div})}">
+
+<title>Shadowbadge :: Details</title>
+
+    <div th:if="${info != null}">
+        <h3>Badge Details</h3>
+        <form th:action="@{|updateForm|}" method="post">
+            <div class="form-group">
+                <label for="inputDisplayName">Display Name</label>
+                <input type="text" th:value="${displayName}" class="form-control" id="inputDisplayName" name="displayName" aria-describedby="inputDisplayName" placeholder="My favorite badge">
+                <small id="inputDisplayNameHelp" class="form-text text-muted">This identifies the badge uniquely.</small>
+            </div>
+            <div class="form-group">
+                <label for="inputHeader">Badge Header</label>
+                <input type="text" th:value="${info.heading}" class="form-control" id="inputHeader" name="heading" aria-describedby="inputHeader" placeholder="Shad Person">
+                <small id="inputHeaderHelp" class="form-text text-muted">This is the text in the top row. Suggestion: a name you call yourself.</small>
+            </div>
+            <div class="form-group">
+                <label for="inputRow1">Title</label>
+                <input type="text" th:value="${info.title}" class="form-control" id="inputRow1" name="title" aria-describedby="inputRow1" placeholder="Senior Computer">
+                <small id="inputRow1Help" class="form-text text-muted">First row on the badge. Suggestion: position or title.</small>
+            </div>
+            <div class="form-group">
+                <label for="inputRow2">Group</label>
+                <input type="text" th:value="${info.group}" class="form-control" id="inputRow2" name="group" aria-describedby="inputRow2" placeholder="NAPS">
+                <small id="inputRow2Help" class="form-text text-muted">Second row on the badge. Suggestion: group or region.</small>
+            </div>
+            <div class="form-group">
+                <label for="inputRow3">Location</label>
+                <input type="text" th:value="${info.location}" class="form-control" id="inputRow3" name="location" aria-describedby="inputRow3" placeholder="Earth">
+                <small id="inputRow3Help" class="form-text text-muted">Third row on the badge. Suggestion: base of operations.</small>
+            </div>
+            <div class="form-group">
+                <label for="inputRow4">Detail</label>
+                <input type="text" th:value="${info.tagline}" class="form-control" id="inputRow4" name="tagline" aria-describedby="inputRow4" placeholder="RHCA, RHCAA, RHCAAA, RHCAAAA">
+                <small id="inputRow4Help" class="form-text text-muted">Last row on the badge. Suggestion: honorifics, certifications, more detail.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button class="btn">Cancel</button>
+        </form>
+    </div>
+
+    <div th:if="${info == null}">
+        <h2>An error occurred while fetching badge details for badge. <a href="home.html">Return home.</a></h2>
+    </div>
+</html>

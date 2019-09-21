@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html th:replace="~{templates/base.html :: base_page(~{::title}, ~{::div})}">
+
+    <title>Shadowbadge :: Home</title>
+
+    <div th:if="${badges!=null and !badges.empty}">
+        <h3>Your Claimed Badges</h3>
+        <div class="list-group">
+            <a th:each="badge : ${badges}" class="list-group-item list-group-item-action" th:href="@{|${badge.badgeId}/detail.html|}"><span th:text="${badge.displayName}">badge display name</span></a>
+        </div>
+    </div>
+
+    <div th:if="${badges==null or badges.empty}">
+        <h3>You have no claimed badges</h3>
+        <p>Please upload the proper firmware (TODO: insert download link) to your Badgy device and then connect it to wifi.</p>
+    </div>
+
+</html>

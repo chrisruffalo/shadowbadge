@@ -1,16 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html th:fragment="base_page(title, content)" lang="en">
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Shadowbadge</title>
+    <title th:replace="${title}"></title>
 
     <!-- Compressed CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 </head>
 <body>
-
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
         <div class="container">
@@ -21,15 +20,12 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item active">
-                        <a class="nav-link" href="#">Home
+                        <a class="nav-link" href="/badges/secure/home.html">Home
                             <span class="sr-only">(current)</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">About</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="badges/secure/home.html">Login</a>
+                        <a class="nav-link" href="/oauth/logout">Logout</a>
                     </li>
                 </ul>
             </div>
@@ -39,8 +35,8 @@
     <!-- Page Content -->
     <div class="container">
         <div class="row">
-            <div class="col-lg-12 text-center">
-
+            <div class="col-lg-12">
+                <th:block th:replace="${content}"/>
             </div>
         </div>
     </div>

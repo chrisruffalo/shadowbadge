@@ -54,18 +54,11 @@
       <artifactId>quarkus-jdbc-postgresql</artifactId>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/org.thymeleaf/thymeleaf -->
     <dependency>
-      <groupId>com.fizzed</groupId>
-      <artifactId>rocker-runtime</artifactId>
-      <version>1.2.2</version>
-    </dependency>
-
-    <!-- for hot-reloading support only during development -->
-    <dependency>
-      <groupId>com.fizzed</groupId>
-      <artifactId>rocker-compiler</artifactId>
-      <version>1.2.2</version>
-      <scope>provided</scope>
+      <groupId>org.thymeleaf</groupId>
+      <artifactId>thymeleaf</artifactId>
+      <version>3.0.11.RELEASE</version>
     </dependency>
 
     <dependency>
@@ -110,24 +103,6 @@
             <goals>
               <goal>jandex</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>com.fizzed</groupId>
-        <artifactId>rocker-maven-plugin</artifactId>
-        <version>1.2.2</version>
-        <executions>
-          <execution>
-            <id>generate-rocker-templates</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>generate</goal>
-            </goals>
-            <configuration>
-              <!-- we need to do this for quarkus -->
-              <outputDirectory>src/main/java</outputDirectory>
-            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -225,26 +200,6 @@
           </systemProperties>
         </configuration>
       </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>3.1.0</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>${project.build.directory}</directory>
-              <includes>
-                <include>**/*</include>
-              </includes>
-            </fileset>
-            <fileset>
-              <directory>src/main/java</directory>
-              <includes>
-                <include>**/templates/*.java</include>
-              </includes>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -269,6 +224,10 @@
                 </goals>
                 <configuration>
                   <enableHttpUrlHandler>true</enableHttpUrlHandler>
+                  <additionalBuildArgs>
+                    <additionalBuildArg>-H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json</additionalBuildArg>
+                    <additionalBuildArg>-H:Log=registerResource</additionalBuildArg>
+                  </additionalBuildArgs>
                 </configuration>
               </execution>
             </executions>

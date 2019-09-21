@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html th:replace="~{templates/base.html :: base_page(~{::title}, ~{::div})}">
+
+    <title>Shadowbadge :: Claim</title>
+
+    <div th:if="${error}">
+        <h2>Error:</h2>
+        <p th:text="${errorText}">ERROR!</p>
+    </div>
+
+    <div th:if="${not error}">
+        <h2>Welcome! <span th:text="${email}"></span></h2>
+        <p>Claimed: <span th:text="${badgeid}">CLAIMED</span></p>
+    </div>
+
+</html>

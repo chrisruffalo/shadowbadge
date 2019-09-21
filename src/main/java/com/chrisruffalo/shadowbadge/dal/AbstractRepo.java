@@ -41,6 +41,11 @@ public abstract class AbstractRepo<T extends BaseEntity> {
         return null;
     }
 
+    List<T> list(Class<T> ofClass, final String id, final String withNamedQuery, final String idParam) {
+        TypedQuery<T> query = this.getEntityManager().createNamedQuery(withNamedQuery, ofClass);
+        query.setParameter(idParam, id);
+        return query.getResultList();
+    }
 
     List<T> list(Class<T> ofClass, final String withNamedQuery) {
         TypedQuery<T> query = this.getEntityManager().createNamedQuery(withNamedQuery, ofClass);

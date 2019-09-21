@@ -43,6 +43,12 @@ public class WelcomeFilter implements Filter {
         if (servletRequest instanceof HttpServletRequest) {
             final HttpServletRequest request = (HttpServletRequest)servletRequest;
 
+            // only handle GET requests
+            if (!"GET".equalsIgnoreCase(request.getMethod())) {
+                filterChain.doFilter(servletRequest, servletResponse);
+                return;
+            }
+
             final String requestUri = request.getRequestURI();
 
             if (null == requestUri || requestUri.isEmpty() || requestUri.equalsIgnoreCase(ROOT)) {

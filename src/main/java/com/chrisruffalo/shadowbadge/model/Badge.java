@@ -72,6 +72,13 @@ public class Badge extends BaseEntity {
     }
 
     public String getDisplayName() {
+        if ((null == displayName || displayName.isEmpty()) && (null != this.badgeId && !this.badgeId.isEmpty())) {
+            int max = 12;
+            if (this.badgeId.length() < max) {
+                max = this.badgeId.length();
+            }
+            this.displayName = "Badge " + this.badgeId.substring(0, max);
+        }
         return displayName;
     }
 
@@ -80,6 +87,9 @@ public class Badge extends BaseEntity {
     }
 
     public BadgeInfo getInfo() {
+        if (this.info == null) {
+            this.info = new BadgeInfo();
+        }
         return info;
     }
 

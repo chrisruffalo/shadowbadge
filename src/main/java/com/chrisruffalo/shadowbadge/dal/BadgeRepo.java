@@ -11,6 +11,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 import javax.transaction.Transactional;
+import java.util.List;
 
 @ApplicationScoped
 public class BadgeRepo extends AbstractRepo<Badge> {
@@ -35,6 +36,10 @@ public class BadgeRepo extends AbstractRepo<Badge> {
     @Override
     protected Badge get(String id) {
         return this.get(Badge.class, id, Badge.QUERY_GET, Badge.PARAM_ID);
+    }
+
+    public Badge getByBadgeId(String badgeId) {
+        return this.get(Badge.class, badgeId, Badge.QUERY_GET_BADGE_ID, Badge.PARAM_BADGE_ID);
     }
 
     /**
@@ -68,19 +73,14 @@ public class BadgeRepo extends AbstractRepo<Badge> {
             try {
                  em.persist(badge);
             } catch (PersistenceException pex) {
-                throw new RepositoryException(REPO, "Could not save badge='%s' (reason: %s)", badgeId, pex.getMessage());
+                throw new RepositoryException(REPO, "Could not update badge='%s' claim (reason: %s)", badgeId, pex.getMessage());
             }
 
             return badge;
         }
 
         if (null != badge.getOwnerId()) {
-            throw new RepositoryException(REPO, "Cannot claim a an already-claimed badge");
-        }
-
-        // turns it into a no-op if no change is expected
-        if (ownerId.equalsIgnoreCase(badge.getOwnerId())) {
-            return badge;
+            throw new RepositoryException(REPO, "Cannot claim an already-claimed badge");
         }
 
         // claim badge by setting the owner id
@@ -88,6 +88,11 @@ public class BadgeRepo extends AbstractRepo<Badge> {
         this.em.merge(badge);
 
         return badge;
+    }
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public List<Badge> list(final String ownerId) {
+         return this.list(Badge.class, ownerId, Badge.QUERY_OWNED, Badge.PARAM_OWNER_ID);
     }
 
     @Transactional(Transactional.TxType.SUPPORTS)
@@ -102,6 +107,44 @@ public class BadgeRepo extends AbstractRepo<Badge> {
         }
 
         return existingBadge.getInfo();
+    }
+
+    @Transactional
+    public Badge updateDisplayName(final String badgeId, final String ownerId, String displayName) throws RepositoryException {
+        if (null == badgeId || badgeId.isEmpty()) {
+            throw new RepositoryException(REPO, "Cannot modify display name without providing a badge id");
+        }
+
+        if (null == ownerId || ownerId.isEmpty()) {
+            throw new RepositoryException(REPO, "A valid owner id is required to update a badge");
+        }
+
+        final Badge existingBadge = this.get(Badge.class, badgeId, Badge.QUERY_GET_BADGE_ID, Badge.PARAM_BADGE_ID);
+        if (null == existingBadge) {
+            throw new RepositoryException(REPO, "Cannot update a non-existent badge");
+        }
+
+        // use null display name
+        if (null == displayName) {
+            displayName = "";
+        }
+
+        // no-op if no change to display name
+        if (displayName.equalsIgnoreCase(existingBadge.getDisplayName())) {
+            return existingBadge;
+        }
+
+        existingBadge.setDisplayName(displayName);
+
+        try {
+            this.em.merge(existingBadge);
+        } catch (PersistenceException ex) {
+            throw new RepositoryException(REPO, "Could not save display name: {}", ex.getMessage());
+        }
+
+        logger.info("Updated display name for badge='{}'", badgeId);
+
+        return existingBadge;
     }
 
     @Transactional
