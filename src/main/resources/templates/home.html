@@ -13,7 +13,7 @@
            </thead>
             <tbody>
                 <tr th:each="badge : ${badges}" class="detailRow" th:onclick="@{|javascript:rowClicked('/badges/secure/${badge.badgeId}/detail.html')|}">
-                    <td class="text-truncate align-middle"><span th:text="${badge.info.displayName}"></span></td>
+                    <td class="text-truncate align-middle"><strong><span th:text="${badge.info.displayName}"></span></strong></td>
                     <td class="text-right align-middle"><button class="btn btn-danger" th:onclick="@{|javascript:unlcaimModal(event, '#unclaimModal', '#unclaimModalDisplay', '#unclaimLocation', '${badge.info.displayName}', '/badges/secure/${badge.badgeId}/unclaimAction')|}">Unclaim</button></td>
                 </tr>
             </tbody>
