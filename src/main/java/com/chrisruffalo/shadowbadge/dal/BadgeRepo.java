@@ -3,6 +3,7 @@ package com.chrisruffalo.shadowbadge.dal;
 import com.chrisruffalo.shadowbadge.exceptions.RepositoryException;
 import com.chrisruffalo.shadowbadge.model.Badge;
 import com.chrisruffalo.shadowbadge.model.BadgeInfo;
+import com.chrisruffalo.shadowbadge.model.ConfigurationStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +67,10 @@ public class BadgeRepo extends AbstractRepo<Badge> {
 
             // create badge
             badge = new Badge();
+            badge.setInfo(new BadgeInfo());
             badge.setBadgeId(badgeId);
             badge.setOwnerId(ownerId);
+            badge.setStatus(ConfigurationStatus.CLAIMED);
 
             // persist
             try {
@@ -91,7 +94,7 @@ public class BadgeRepo extends AbstractRepo<Badge> {
     }
 
     @Transactional(Transactional.TxType.SUPPORTS)
-    public List<Badge> list(final String ownerId) {
+    public List<Badge> listForOwner(final String ownerId) {
          return this.list(Badge.class, ownerId, Badge.QUERY_OWNED, Badge.PARAM_OWNER_ID);
     }
 
@@ -107,44 +110,6 @@ public class BadgeRepo extends AbstractRepo<Badge> {
         }
 
         return existingBadge.getInfo();
-    }
-
-    @Transactional
-    public Badge updateDisplayName(final String badgeId, final String ownerId, String displayName) throws RepositoryException {
-        if (null == badgeId || badgeId.isEmpty()) {
-            throw new RepositoryException(REPO, "Cannot modify display name without providing a badge id");
-        }
-
-        if (null == ownerId || ownerId.isEmpty()) {
-            throw new RepositoryException(REPO, "A valid owner id is required to update a badge");
-        }
-
-        final Badge existingBadge = this.get(Badge.class, badgeId, Badge.QUERY_GET_BADGE_ID, Badge.PARAM_BADGE_ID);
-        if (null == existingBadge) {
-            throw new RepositoryException(REPO, "Cannot update a non-existent badge");
-        }
-
-        // use null display name
-        if (null == displayName) {
-            displayName = "";
-        }
-
-        // no-op if no change to display name
-        if (displayName.equalsIgnoreCase(existingBadge.getDisplayName())) {
-            return existingBadge;
-        }
-
-        existingBadge.setDisplayName(displayName);
-
-        try {
-            this.em.merge(existingBadge);
-        } catch (PersistenceException ex) {
-            throw new RepositoryException(REPO, "Could not save display name: {}", ex.getMessage());
-        }
-
-        logger.info("Updated display name for badge='{}'", badgeId);
-
-        return existingBadge;
     }
 
     @Transactional
@@ -170,6 +135,7 @@ public class BadgeRepo extends AbstractRepo<Badge> {
             throw new RepositoryException(REPO, "Cannot update badge info from a different user id");
         }
 
+        existingBadge.setStatus(ConfigurationStatus.CONFIGURED);
         existingBadge.setInfo(info);
 
         try {
@@ -181,5 +147,37 @@ public class BadgeRepo extends AbstractRepo<Badge> {
         logger.info("Updated badge information for badge='{}'", badgeId);
 
         return existingBadge;
+    }
+
+    @Transactional
+    public void unclaim(final String badgeId, final String ownerId) throws RepositoryException{
+        if (null == badgeId || badgeId.isEmpty()) {
+            throw new RepositoryException(REPO, "Cannot modify badge without providing a badge id");
+        }
+
+        if (null == ownerId || ownerId.isEmpty()) {
+            throw new RepositoryException(REPO, "A valid owner is necessary to remove a badge");
+        }
+
+        final Badge existingBadge = this.get(Badge.class, badgeId, Badge.QUERY_GET_BADGE_ID, Badge.PARAM_BADGE_ID);
+        if (null == existingBadge) {
+            throw new RepositoryException(REPO, "Cannot unclaim a non-existent badge");
+        }
+
+        if (!ownerId.equalsIgnoreCase(existingBadge.getOwnerId())) {
+            throw new RepositoryException(REPO, "Cannot unclaim a badge you do not own");
+        }
+
+        // change badge id and reset configuration status
+        existingBadge.setStatus(ConfigurationStatus.NONE);
+        existingBadge.setOwnerId(null);
+
+        try {
+            this.em.merge(existingBadge);
+        } catch (PersistenceException ex) {
+            throw new RepositoryException(REPO, "Could not save badge info: {}", ex.getMessage());
+        }
+
+        logger.info("Unclaimed badge='{}'", badgeId);
     }
 }

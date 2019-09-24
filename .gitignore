@@ -4,3 +4,6 @@
 
 # do not commit target dir
 target
+
+# quarkus' object store directory is in the root of the project
+ObjectStore

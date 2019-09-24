@@ -1,3 +1,12 @@
+-- create user table
+CREATE TABLE "consumers" (
+    id VARCHAR,
+    email VARCHAR,
+    authId VARCHAR,
+    displayName VARCHAR,
+    PRIMARY KEY(id)
+);
+
 -- create badge + badgeInfo table
 CREATE TABLE badges (
     -- badge

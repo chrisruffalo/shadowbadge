@@ -5,10 +5,10 @@
 
     <div th:if="${info != null}">
         <h3>Badge Details</h3>
-        <form th:action="@{|updateForm|}" method="post">
+        <form th:action="@{|/badges/secure/${badgeId}/updateForm|}" method="post">
             <div class="form-group">
                 <label for="inputDisplayName">Display Name</label>
-                <input type="text" th:value="${displayName}" class="form-control" id="inputDisplayName" name="displayName" aria-describedby="inputDisplayName" placeholder="My favorite badge">
+                <input type="text" th:value="${info.displayName}" class="form-control" id="inputDisplayName" name="displayName" aria-describedby="inputDisplayName" placeholder="My favorite badge">
                 <small id="inputDisplayNameHelp" class="form-text text-muted">This identifies the badge uniquely.</small>
             </div>
             <div class="form-group">
@@ -37,7 +37,7 @@
                 <small id="inputRow4Help" class="form-text text-muted">Last row on the badge. Suggestion: honorifics, certifications, more detail.</small>
             </div>
             <button type="submit" class="btn btn-primary">Submit</button>
-            <button class="btn">Cancel</button>
+            <a th:href="@{|/badges/secure/home.html|}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 

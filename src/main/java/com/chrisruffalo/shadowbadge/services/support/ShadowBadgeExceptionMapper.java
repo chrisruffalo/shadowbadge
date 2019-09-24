@@ -5,12 +5,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.thymeleaf.exceptions.TemplateInputException;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
 @Provider
 public class ShadowBadgeExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Throwable> {
+
+    @Context
+    private HttpServletRequest httpServletRequest;
 
     @Override
     public Response toResponse(Throwable throwable) {
@@ -18,6 +23,7 @@ public class ShadowBadgeExceptionMapper implements javax.ws.rs.ext.ExceptionMapp
         logger.error(throwable.getMessage());
 
         int statusCode = Response.Status.BAD_REQUEST.getStatusCode();
+
         if (!(throwable instanceof ShadowbadgeException)) {
             statusCode = Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
 
@@ -30,7 +36,13 @@ public class ShadowBadgeExceptionMapper implements javax.ws.rs.ext.ExceptionMapp
                 logger.error("Exception", throwable);
             }
         }
-        return Response.status(statusCode, throwable.getMessage()).build();
+
+        if (throwable instanceof NotFoundException) {
+            statusCode = Response.Status.NOT_FOUND.getStatusCode();
+        }
+
+        // return response
+        return Response.status(statusCode).build();
     }
 
 }

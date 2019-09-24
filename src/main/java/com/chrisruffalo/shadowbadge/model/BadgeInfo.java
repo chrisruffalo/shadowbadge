@@ -11,6 +11,9 @@ import javax.persistence.Embeddable;
 public class BadgeInfo {
 
     @Column
+    private String displayName;
+
+    @Column
     private String heading;
 
     @Column
@@ -24,6 +27,17 @@ public class BadgeInfo {
 
     @Column
     private String tagline;
+
+    public String getDisplayName() {
+        if (null == displayName || displayName.isEmpty()) {
+            this.displayName = "Unnamed Badge";
+        }
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
 
     public String getHeading() {
         return heading;

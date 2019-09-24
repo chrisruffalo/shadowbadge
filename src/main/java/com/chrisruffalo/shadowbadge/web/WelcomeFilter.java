@@ -3,6 +3,7 @@ package com.chrisruffalo.shadowbadge.web;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -31,6 +32,9 @@ public class WelcomeFilter implements Filter {
 
     private final String REDIRECT = "/index.html";
 
+    @Inject
+    Redirection redirection;
+
     private Logger logger;
 
     @Override
@@ -52,17 +56,18 @@ public class WelcomeFilter implements Filter {
             final String requestUri = request.getRequestURI();
 
             if (null == requestUri || requestUri.isEmpty() || requestUri.equalsIgnoreCase(ROOT)) {
-               this.redirect(REDIRECT, servletResponse);
+               this.redirect(REDIRECT, servletRequest, servletResponse);
             }
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
-    private void redirect(final String to, final ServletResponse servletResponse) throws IOException {
-        this.logger.info("Welcome redirect to: {}", to);
+    private void redirect(final String to, final ServletRequest servletRequest, final ServletResponse servletResponse) throws IOException {
         if (servletResponse instanceof HttpServletResponse) {
-            ((HttpServletResponse)servletResponse).sendRedirect(((HttpServletResponse) servletResponse).encodeRedirectURL(to));
+            final String url = this.redirection.getRedirect(to, servletRequest);
+            this.logger.info("Redirect to: {}", url);
+            ((HttpServletResponse)servletResponse).sendRedirect(((HttpServletResponse) servletResponse).encodeRedirectURL(url));
         }
     }
 }

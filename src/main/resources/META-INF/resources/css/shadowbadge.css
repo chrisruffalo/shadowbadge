@@ -1,0 +1,8 @@
+.detailRow {
+    cursor: pointer;
+}
+
+.shadowbadge-table-hover tbody tr:hover {
+    background-color: rgba(200, 128, 128, 0.75);
+    color: #ffffff;
+}

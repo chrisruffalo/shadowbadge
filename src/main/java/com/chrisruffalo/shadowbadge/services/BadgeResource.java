@@ -7,16 +7,21 @@ import com.chrisruffalo.shadowbadge.model.Badge;
 import com.chrisruffalo.shadowbadge.model.BadgeInfo;
 import com.chrisruffalo.shadowbadge.services.support.Secure;
 import com.chrisruffalo.shadowbadge.services.support.ThymeLeafStreamingOutput;
-import com.chrisruffalo.shadowbadge.templates.QuarkusThymeleafTemplateLoader;
+import com.chrisruffalo.shadowbadge.templates.TemplateEngineFactory;
 import com.chrisruffalo.shadowbadge.web.Constants;
+import com.chrisruffalo.shadowbadge.web.Redirection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
+import org.thymeleaf.context.WebContext;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -25,6 +30,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -34,7 +40,19 @@ import java.util.List;
 public class BadgeResource {
 
     @Inject
+    Redirection redirection;
+
+    @Inject
     BadgeRepo badges;
+
+    @Context
+    private HttpServletRequest servletRequest;
+
+    @Context
+    private HttpServletResponse servletResponse;
+
+    @Context
+    private ServletContext servletContext;
 
     private TemplateEngine engine;
 
@@ -43,8 +61,7 @@ public class BadgeResource {
     @PostConstruct
     public void init() {
         // create engine with resolver
-        this.engine = new TemplateEngine();
-        this.engine.setTemplateResolver(new QuarkusThymeleafTemplateLoader());
+        this.engine = TemplateEngineFactory.INSTANCE.getTemplateEngine();
     }
 
     @Secure
@@ -64,7 +81,8 @@ public class BadgeResource {
     @Produces(MediaType.TEXT_HTML)
     public Response claimHtml(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
         // create context
-        final Context context = new Context();
+        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
+
         context.setVariable("badgeid", badgeId);
         context.setVariable("userid", ownerId);
 
@@ -91,12 +109,12 @@ public class BadgeResource {
         @HeaderParam(Constants.X_AUTH_EMAIL) final String email
     ) throws ShadowbadgeException {
         // create context
-        final Context context = new Context();
+        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
         context.setVariable("userid", ownerId);
         context.setVariable("email", email);
 
         // get by owner id
-        final List<Badge> list = badges.list(ownerId);
+        final List<Badge> list = badges.listForOwner(ownerId);
         context.setVariable("badges", list);
 
         // return streaming response
@@ -107,11 +125,12 @@ public class BadgeResource {
     @Path("{badgeId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response info(@PathParam("badgeId") final String badgeId) throws ShadowbadgeException {
-        final BadgeInfo info = badges.info(badgeId);
-        if (info == null) {
+        this.logger.info("Got request for json info badge='{}'", badgeId);
+        final Badge badge = badges.getByBadgeId(badgeId);
+        if (badge == null) {
             return Response.noContent().build();
         }
-        return Response.ok(info).build();
+        return Response.ok(badge).build();
     }
 
     @Secure
@@ -124,7 +143,7 @@ public class BadgeResource {
         @HeaderParam(Constants.X_AUTH_EMAIL) final String email
     ) throws ShadowbadgeException {
         // create context
-        final Context context = new Context();
+        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
         context.setVariable("userid", ownerId);
         context.setVariable("email", email);
         context.setVariable("badgeId", badgeId);
@@ -133,7 +152,6 @@ public class BadgeResource {
         if (null == badge) {
             return Response.noContent().build();
         }
-        context.setVariable("displayName", badge.getDisplayName());
 
         final BadgeInfo info = badge.getInfo();
         if (null != info) {
@@ -155,6 +173,24 @@ public class BadgeResource {
         return Response.ok(badges.updateInfo(badgeId, ownerId, newInfo)).build();
     }
 
+    @Secure
+    @DELETE
+    @Path("secure/{badgeId}/unclaim")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response unclaim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
+        this.badges.unclaim(badgeId, ownerId);
+        // if all goes ok, return home
+        return Response.ok("badge deleted").build();
+    }
+
+    @Secure
+    @GET
+    @Path("secure/{badgeId}/unclaimAction")
+    public Response unclaimAction(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
+        this.badges.unclaim(badgeId, ownerId);
+        // if all goes ok, return home
+        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/home.html", this.servletRequest))).build();
+    }
 
     @Secure
     @PUT
@@ -171,13 +207,11 @@ public class BadgeResource {
         @FormParam("location") final String location,
         @FormParam("tagline") final String tagline
     ) throws RepositoryException {
-        // update display name
-        badges.updateDisplayName(badgeId, ownerId, displayName);
-
         BadgeInfo info = badges.info(badgeId);
         if (null == info) {
             info = new BadgeInfo();
         }
+        info.setDisplayName(displayName);
         info.setHeading(heading);
         info.setGroup(group);
         info.setTitle(title);
@@ -188,7 +222,6 @@ public class BadgeResource {
         badges.updateInfo(badgeId, ownerId, info);
 
         // if all goes ok, return home
-        return Response.seeOther(URI.create("/badges/secure/home.html")).build();
+        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/home.html", this.servletRequest))).build();
     }
-
 }

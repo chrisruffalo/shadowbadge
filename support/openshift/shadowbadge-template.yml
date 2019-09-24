@@ -88,6 +88,8 @@ objects:
             value: "${POSTGRES_USER}"
           - name: QUARKUS_DATASOURCE_PASSWORD
             value: "${POSTGRES_PASSWORD}"
+          - name: SHADOWBADGE_EXTERNAL_URL
+            value: "${EXTERNAL_URL}"
           ports:
           - containerPort: 8080
             protocol: TCP
@@ -129,3 +131,5 @@ parameters:
   required: true
 - name: POSTGRES_PASSWORD
   required: true
+- name: EXTERNAL_URL
+  value: ""

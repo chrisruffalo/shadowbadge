@@ -1,5 +1,8 @@
 package com.chrisruffalo.shadowbadge.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -7,6 +10,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.QueryHint;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name = "badges")
@@ -52,15 +56,20 @@ public class Badge extends BaseEntity {
     public static final String PARAM_OWNER_ID = "ownerId";
 
     @Column(unique = true)
-    private String badgeId;
+    String badgeId;
 
     @Column
     private String ownerId;
 
     @Column
-    private String displayName;
+    private ConfigurationStatus status = ConfigurationStatus.NONE;
+
+    @Transient
+    @JsonInclude
+    private String url;
 
     @Embedded
+    @JsonUnwrapped
     private BadgeInfo info;
 
     public String getOwnerId() {
@@ -69,21 +78,6 @@ public class Badge extends BaseEntity {
 
     public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
-    }
-
-    public String getDisplayName() {
-        if ((null == displayName || displayName.isEmpty()) && (null != this.badgeId && !this.badgeId.isEmpty())) {
-            int max = 12;
-            if (this.badgeId.length() < max) {
-                max = this.badgeId.length();
-            }
-            this.displayName = "Badge " + this.badgeId.substring(0, max);
-        }
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
     }
 
     public BadgeInfo getInfo() {
@@ -103,5 +97,23 @@ public class Badge extends BaseEntity {
 
     public void setBadgeId(String badgeId) {
         this.badgeId = badgeId;
+    }
+
+    public String getUrl() {
+        if (null == this.url || this.url.isEmpty()) {
+            this.url = String.format("/badges/%s/capture", this.getId());
+        }
+        return this.url;
+    }
+
+    public ConfigurationStatus getStatus() {
+        if (null == this.status ) {
+            this.status = ConfigurationStatus.NONE;
+        }
+        return status;
+    }
+
+    public void setStatus(ConfigurationStatus status) {
+        this.status = status;
     }
 }
