@@ -6,6 +6,7 @@ import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
 import com.chrisruffalo.shadowbadge.model.Badge;
 import com.chrisruffalo.shadowbadge.model.BadgeInfo;
 import com.chrisruffalo.shadowbadge.model.IconType;
+import com.chrisruffalo.shadowbadge.model.LayoutStyle;
 import com.chrisruffalo.shadowbadge.services.support.Secure;
 import com.chrisruffalo.shadowbadge.services.support.ThymeLeafStreamingOutput;
 import com.chrisruffalo.shadowbadge.templates.TemplateEngineFactory;
@@ -31,8 +32,8 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -71,24 +72,26 @@ public class BadgeResource {
     @POST
     @Path("secure/{badgeId}/claim")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response claim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
-        return Response.ok(badges.claim(badgeId, ownerId)).build();
+    public Response claim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId, @QueryParam("secret") final String secret) throws ShadowbadgeException {
+        return Response.ok(badges.claim(badgeId, ownerId, secret)).build();
     }
 
     @Secure
     @GET // semantically dubious
     @Path("secure/{badgeId}/claimAction")
     @Produces(MediaType.TEXT_HTML)
-    public Response claimHtml(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
-
+    public Response claimAction(
+        @PathParam("badgeId") final String badgeId,
+        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId,
+        @QueryParam("secret") final String secret
+    ) throws ShadowbadgeException {
         try {
-            final Badge badge = badges.claim(badgeId, ownerId);
+            badges.claim(badgeId, ownerId, secret);
+            return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/secure/%s/detail.html", badgeId), this.servletRequest))).build();
         } catch (ShadowbadgeException e) {
             // this is "better-ish"
-            return this.home(badgeId, ownerId, e);
+            return this.home(ownerId, e);
         }
-
-        return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/secure/%s/detail.html", badgeId), this.servletRequest))).build();
     }
 
     @Secure
@@ -96,13 +99,12 @@ public class BadgeResource {
     @Path("secure/home.html")
     @Produces(MediaType.TEXT_HTML)
     public Response home(
-        @PathParam("badgeId") final String badgeId,
         @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        return this.home(badgeId, ownerId, null);
+        return this.home(ownerId, null);
     }
 
-    private Response home(final String badgeId, final String ownerId, final Exception error) {
+    private Response home(final String ownerId, final Exception error) {
         // create context
         final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
         context.setVariable("userid", ownerId);
@@ -125,12 +127,24 @@ public class BadgeResource {
     @GET
     @Path("{badgeId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response detail(@PathParam("badgeId") final String badgeId) throws ShadowbadgeException {
-        this.logger.info("Got request for json info badge='{}'", badgeId);
+    public Response detail(
+        @PathParam("badgeId") final String badgeId,
+        @HeaderParam(Constants.X_SHADOWBADGE_SECRET) final String secret
+    ) throws ShadowbadgeException {
+        this.logger.info("requested badge='{}' (secret='{}')", badgeId, secret);
         final Badge badge = badges.getByBadgeId(badgeId);
         if (badge == null) {
             return Response.noContent().build();
         }
+
+        // require that the presented secret equals the secret registered with the badge in order to
+        // actually return information. prevents people from randomly browsing looking for badges that
+        // don't belong to them
+        if (badge.getSecret() != null && !badge.getSecret().isEmpty() && !badge.getSecret().equals(secret)) {
+            this.logger.warn("mismatched secret (b:{} != r:{})", badge.getSecret(), secret);
+            return Response.noContent().build();
+        }
+
         return Response.ok(badge).build();
     }
 
@@ -140,18 +154,21 @@ public class BadgeResource {
     @Produces(MediaType.TEXT_HTML)
     public Response detailHtml(
         @PathParam("badgeId") final String badgeId,
-        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId,
-        @HeaderParam(Constants.X_AUTH_EMAIL) final String email
+        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
         // create context
         final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
         context.setVariable("userid", ownerId);
-        context.setVariable("email", email);
         context.setVariable("badgeId", badgeId);
 
         final Badge badge = badges.getByBadgeId(badgeId);
         if (null == badge) {
             return Response.noContent().build();
+        }
+
+        // check owner id
+        if (ownerId == null || !ownerId.equalsIgnoreCase(badge.getOwnerId())) {
+            return this.home(ownerId, new ShadowbadgeException("You have no claim on the selected badge."));
         }
 
         final BadgeInfo info = badge.getInfo();
@@ -180,8 +197,7 @@ public class BadgeResource {
     @Produces(MediaType.TEXT_PLAIN)
     public Response unclaim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
         this.badges.unclaim(badgeId, ownerId);
-        // if all goes ok, return home
-        return Response.ok("badge deleted").build();
+        return Response.ok("badge claim removed").build();
     }
 
     @Secure
@@ -207,7 +223,8 @@ public class BadgeResource {
         @FormParam("group") final String group,
         @FormParam("location") final String location,
         @FormParam("tagline") final String tagline,
-        @FormParam("icon") final String iconString
+        @FormParam("icon") final String iconString,
+        @FormParam("style") final String styleString
     ) throws RepositoryException {
         BadgeInfo info = badges.info(badgeId);
         if (null == info) {
@@ -226,6 +243,14 @@ public class BadgeResource {
             info.setIcon(icon);
         } catch (Exception ex) {
             info.setIcon(IconType.RED_HAT);
+        }
+
+        // same for layout style
+        try {
+            final LayoutStyle style = LayoutStyle.valueOf(styleString);
+            info.setStyle(style);
+        } catch (Exception ex) {
+            info.setStyle(LayoutStyle.ICON_RIGHT);
         }
 
         // update individual

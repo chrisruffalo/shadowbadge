@@ -14,7 +14,15 @@
             <div class="form-group">
                 <label for="inputHeader">Badge Header</label>
                 <input type="text" th:value="${info.heading}" class="form-control" id="inputHeader" name="heading" aria-describedby="inputHeader" placeholder="Shad Person">
-                <small id="inputHeaderHelp" class="form-text text-muted">This is the text in the top row. Suggestion: a name you call yourself.</small>
+                <small id="inputHeaderHelp" class="form-text text-muted">This is the text header part of the badge. Suggestion: a name you call yourself.</small>
+            </div>
+            <div class="form-group">
+                <label for="badgeLayoutSelect">Layout Style</label>
+                <select class="form-control" th:field="${info.icon}" th:value="${info.icon}" id="badgeLayoutSelect" name="style">
+                    <option th:value="'ICON_RIGHT'" th:text="'Icon Right'" th:selected="${#strings.equals(info.style, 'ICON_RIGHT')}">Icon Right</option>
+                    <option th:value="'ICON_LEFT'" th:text="'Icon Left'" th:selected="${#strings.equals(info.style, 'ICON_LEFT')}">Icon Left</option>
+                </select>
+                <small id="badgeLayoutSelectHelp" class="form-text text-muted">The layout/style of the badge.</small>
             </div>
             <div class="form-group">
                 <label for="badgeIconSelect">Badge Icon</label>
@@ -22,7 +30,7 @@
                     <option th:value="'RED_HAT'" th:text="'Red Hat'" th:selected="${#strings.equals(info.icon, 'RED_HAT')}">Red Hat</option>
                     <option th:value="'SHADOWMAN'" th:text="'Shadowman'" th:selected="${#strings.equals(info.icon, 'SHADOWMAN')}">Shadowman</option>
                 </select>
-                <small id="badgeIconSelectHelp" class="form-text text-muted">Icon shown in top left corner of badge.</small>
+                <small id="badgeIconSelectHelp" class="form-text text-muted">Badge icon displayed according to selected layout.</small>
             </div>
             <div class="form-group">
                 <label for="inputRow1">Title</label>

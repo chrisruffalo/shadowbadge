@@ -1,5 +1,6 @@
 package com.chrisruffalo.shadowbadge.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.oblac.nomen.Nomen;
@@ -78,6 +79,10 @@ public class Badge extends BaseEntity {
     private String shortId;
 
     @Column
+    @JsonIgnore
+    private String secret;
+
+    @Column
     private String ownerId;
 
     @Column
@@ -144,6 +149,14 @@ public class Badge extends BaseEntity {
         this.status = status;
     }
 
+    public String getSecret() {
+        return secret;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
+
     @Transient
     @JsonInclude
     public String getHash() {
@@ -160,6 +173,11 @@ public class Badge extends BaseEntity {
         // badge id
         fields.add(this.getBadgeId());
 
+        // add status
+        if (this.getStatus() != null) {
+            fields.add(this.getStatus().name());
+        }
+
         // all info
         if (null != this.getInfo()) {
             fields.add(this.getInfo().getHeading());
@@ -168,6 +186,7 @@ public class Badge extends BaseEntity {
             fields.add(this.getInfo().getTitle());
             fields.add(this.getInfo().getTagline());
             fields.add(this.getInfo().getIcon().name());
+            fields.add(this.getInfo().getStyle().name());
         }
 
         // other fields that might change too

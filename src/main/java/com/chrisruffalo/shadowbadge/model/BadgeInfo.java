@@ -31,6 +31,9 @@ public class BadgeInfo {
     @Column
     private String tagline = "";
 
+    @Column
+    private LayoutStyle style = LayoutStyle.ICON_RIGHT;
+
     public String getDisplayName() {
         if (null == displayName || displayName.isEmpty()) {
             this.displayName = "Unnamed Badge";
@@ -83,13 +86,24 @@ public class BadgeInfo {
     }
 
     public IconType getIcon() {
-        if (icon == null) {
-            icon = IconType.RED_HAT;
+        if (this.icon == null) {
+            this.icon = IconType.RED_HAT;
         }
         return icon;
     }
 
     public void setIcon(IconType icon) {
         this.icon = icon;
+    }
+
+    public LayoutStyle getStyle() {
+        if (this.style == null) {
+            this.style = LayoutStyle.ICON_RIGHT;
+        }
+        return style;
+    }
+
+    public void setStyle(LayoutStyle style) {
+        this.style = style;
     }
 }

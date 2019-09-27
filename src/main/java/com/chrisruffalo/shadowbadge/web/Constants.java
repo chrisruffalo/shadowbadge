@@ -10,4 +10,7 @@ public class Constants {
     public final static String X_AUTH_USERID = "X-Auth-Userid";
     public final static String X_AUTH_UUSERNAME = "X-Auth-Username";
 
+    // values from badge
+    public final static String X_SHADOWBADGE_SECRET = "X-Shadowbadge-Secret";
+
 }
