@@ -90,6 +90,8 @@ objects:
             value: "${POSTGRES_PASSWORD}"
           - name: SHADOWBADGE_EXTERNAL_URL
             value: "${EXTERNAL_URL}"
+          - name: SHADOWBADGE_ACCOUNT_URL
+            value: "${ACCOUNT_URL}"
           ports:
           - containerPort: 8080
             protocol: TCP
@@ -132,4 +134,8 @@ parameters:
 - name: POSTGRES_PASSWORD
   required: true
 - name: EXTERNAL_URL
+  description: The external route URL. This template does not configure the routes but if you are using Gatekeeper this is the best way to make Shadowbadge correctly redirect
+  value: ""
+- name: ACCOUNT_URL
+  description: The url to the account service on your Keycloak server. If this value is not set the "account" link redirects to the index
   value: ""

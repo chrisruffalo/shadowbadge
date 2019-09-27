@@ -2,6 +2,8 @@ package com.chrisruffalo.shadowbadge.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.oblac.nomen.Nomen;
+import io.vertx.core.eventbus.Message;
 
 import javax.persistence.Column;
 import javax.persistence.Embedded;
@@ -11,6 +13,11 @@ import javax.persistence.NamedQuery;
 import javax.persistence.QueryHint;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 
 @Entity
 @Table(name = "badges")
@@ -28,6 +35,13 @@ import javax.persistence.Transient;
         hints = {
                 @QueryHint(name = "org.hibernate.cacheable", value = "true")
         }
+    ),
+    @NamedQuery(
+            name = Badge.QUERY_GET_SHORT_ID,
+            query = "SELECT badge FROM Badge badge WHERE shortId = :" + Badge.PARAM_SHORT_ID,
+            hints = {
+                    @QueryHint(name = "org.hibernate.cacheable", value = "true")
+            }
     ),
     @NamedQuery(
         name = Badge.QUERY_ALL,
@@ -50,13 +64,18 @@ public class Badge extends BaseEntity {
     public static final String QUERY_ALL = "Badge.all";
     public static final String QUERY_GET_BADGE_ID = "Badge.getBadgeId";
     public static final String QUERY_OWNED = "Badge.forOwner";
+    public static final String QUERY_GET_SHORT_ID = "Badge.getShortId";
 
     public static final String PARAM_ID = "id";
     public static final String PARAM_BADGE_ID = "badgeId";
     public static final String PARAM_OWNER_ID = "ownerId";
+    public static final String PARAM_SHORT_ID = "shortId";
 
     @Column(unique = true)
-    String badgeId;
+    private String badgeId;
+
+    @Column(unique = true)
+    private String shortId;
 
     @Column
     private String ownerId;
@@ -99,9 +118,17 @@ public class Badge extends BaseEntity {
         this.badgeId = badgeId;
     }
 
+    public String getShortId() {
+        return shortId;
+    }
+
+    public void setShortId(String shortId) {
+        this.shortId = shortId;
+    }
+
     public String getUrl() {
         if (null == this.url || this.url.isEmpty()) {
-            this.url = String.format("/badges/%s/capture", this.getId());
+            this.url = String.format("/badges/%s/capture", this.getShortId());
         }
         return this.url;
     }
@@ -115,5 +142,51 @@ public class Badge extends BaseEntity {
 
     public void setStatus(ConfigurationStatus status) {
         this.status = status;
+    }
+
+    @Transient
+    @JsonInclude
+    public String getHash() {
+        final MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+
+        // order. is. important.
+        final List<String> fields = new ArrayList<>();
+
+        // badge id
+        fields.add(this.getBadgeId());
+
+        // all info
+        if (null != this.getInfo()) {
+            fields.add(this.getInfo().getHeading());
+            fields.add(this.getInfo().getGroup());
+            fields.add(this.getInfo().getLocation());
+            fields.add(this.getInfo().getTitle());
+            fields.add(this.getInfo().getTagline());
+            fields.add(this.getInfo().getIcon().name());
+        }
+
+        // other fields that might change too
+        if (null != this.getUrl()) {
+            fields.add(this.getUrl());
+        }
+
+        if (null != this.getOwnerId()) {
+            fields.add(this.getOwnerId());
+        }
+
+        // go through fields and hash them, discarding null fields
+        fields.forEach((field) -> {
+            if (null != field) {
+                digest.update(field.getBytes());
+            }
+        });
+
+        // base64 encoding
+        return Base64.getUrlEncoder().encodeToString(digest.digest());
     }
 }

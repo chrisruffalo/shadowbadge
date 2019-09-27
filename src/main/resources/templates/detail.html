@@ -17,6 +17,14 @@
                 <small id="inputHeaderHelp" class="form-text text-muted">This is the text in the top row. Suggestion: a name you call yourself.</small>
             </div>
             <div class="form-group">
+                <label for="badgeIconSelect">Badge Icon</label>
+                <select class="form-control" th:field="${info.icon}" th:value="${info.icon}" id="badgeIconSelect" name="icon">
+                    <option th:value="'RED_HAT'" th:text="'Red Hat'" th:selected="${#strings.equals(info.icon, 'RED_HAT')}">Red Hat</option>
+                    <option th:value="'SHADOWMAN'" th:text="'Shadowman'" th:selected="${#strings.equals(info.icon, 'SHADOWMAN')}">Shadowman</option>
+                </select>
+                <small id="badgeIconSelectHelp" class="form-text text-muted">Icon shown in top left corner of badge.</small>
+            </div>
+            <div class="form-group">
                 <label for="inputRow1">Title</label>
                 <input type="text" th:value="${info.title}" class="form-control" id="inputRow1" name="title" aria-describedby="inputRow1" placeholder="Senior Computer">
                 <small id="inputRow1Help" class="form-text text-muted">First row on the badge. Suggestion: position or title.</small>

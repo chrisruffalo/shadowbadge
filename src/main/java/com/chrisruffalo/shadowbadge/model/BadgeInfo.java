@@ -11,22 +11,25 @@ import javax.persistence.Embeddable;
 public class BadgeInfo {
 
     @Column
-    private String displayName;
+    private String displayName = "";
 
     @Column
-    private String heading;
+    private String heading = "";
 
     @Column
-    private String location;
+    private IconType icon = IconType.RED_HAT;
+
+    @Column
+    private String location = "";
 
     @Column(name = "groupName")
-    private String group;
+    private String group = "";
 
     @Column
-    private String title;
+    private String title = "";
 
     @Column
-    private String tagline;
+    private String tagline = "";
 
     public String getDisplayName() {
         if (null == displayName || displayName.isEmpty()) {
@@ -77,5 +80,16 @@ public class BadgeInfo {
 
     public void setTagline(String tagline) {
         this.tagline = tagline;
+    }
+
+    public IconType getIcon() {
+        if (icon == null) {
+            icon = IconType.RED_HAT;
+        }
+        return icon;
+    }
+
+    public void setIcon(IconType icon) {
+        this.icon = icon;
     }
 }

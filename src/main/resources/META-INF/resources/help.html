@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Shadowbadge</title>
+
+    <!-- Compressed CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
+        <div class="container">
+            <a class="navbar-brand" href="/index.html">Shadowbadge</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/downloads.html">Downloads</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/badges/secure/home.html">Badges</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/account">Account</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <h2 class="mt-5">General Overview</h2>
+                <p>
+                    The Shadowbadge firmware and software are based around the <a href="https://github.com/sqfmi/badgy">Badgy</a>
+                    device in a B/W/R (black, white, and red) screen configuration.
+                </p>
+                <h2 class="mt-5">Controls</h2>
+                <p>
+                    There is a five-way switch on the front of the Badgy that is used to give rudimentary input commands
+                    during operation. While we hope to expand this to an actual menu system this is enough to give basic
+                    input capabilities at this stage. The controls only apply to a Badgy device running the Shadowbadge
+                    firmware.
+                </p>
+                <p><img class="img-fluid" style="width: 50%" src="/img/shadowbadge_large.jpg"></p>
+                <p>
+                    All control inputs are given facing the device with the five-way switch to the <em>right</em> of the
+                    screen. The controls can be used to perform a variety of actions at
+                    power-on. <strong>All directions/controls are based on the device being oriented as in the picture above.</strong>
+                </p>
+                <h6>During Power On</h6>
+                <ul>
+                    <li>Up: Completely forget all settings, both wifi and device</li>
+                    <li>Right: Forget wifi settings</li>
+                    <li>
+                        Center: Put the device into refresh mode immediately (pulls configuration from this
+                        web application)
+                    </li>
+                    <li>
+                        Left: Put the device into OTA update mode to allow new firmware to be used
+                    </li>
+                </ul>
+                <p>
+                    Or during the normal operation of the device.
+                </p>
+                <h6>While the Device is On</h6>
+                <ul>
+                    <li>Center: Put the device into refresh mode until an update happens</li>
+                </ul>
+                <h2 class="mt-5">Getting the Firmware</h2>
+                <p>
+                    You can download the current version of the Shadowbadge firmware for the Badge device from the
+                    <a href="/downloads.html">downloads page</a>. The version hosted there is intended for use with
+                    the current version of the Shadowbadge web application. This firmware is a binary file that needs
+                    to be loaded onto the Badgy device.
+                </p>
+                <h2 class="mt-5">Loading the Firmware</h2>
+                <p>
+                    If you are using the default Badgy firmware then you can enter the OTA (over the air) update mode
+                    by holding down the center button on the five-way switch as you slide the device from the "off" to
+                    the "on" position.
+                </p>
+                <p>
+                    If you are using Shadowbadge firmware to enter OTA update mode the five-way switch needs to be held
+                    in the <em>>left</em> (toward the device's screen) position as the device is powered on.
+                </p>
+                <p>
+                    Once you are in OTA mode you can connect to the access point provided by the Badgy's WiFi with the
+                    on-screen details. The Badgy device (in either firmware) will need to be connected to a wifi network
+                    in before you can connect to the update server.
+                </p>
+                <h2 class="mt-5">Connecting to Wifi</h2>
+                <p>
+                    When using any firmware (Badgy default or Shadowbadge) the device will remember the last AP that you
+                    connected it to. If it cannot find or connect to that AP it will show a screen with details for
+                    connecting to the device's AP which will provide you with a captive-portal webpage you can then
+                    use to connect the device to a local AP.
+                </p>
+                <p>
+                    When using the Shadowbadge firmware the AP's SSID and password are generated so that you must be
+                    in view of the screen to connect. To make this process faster a QR code is displayed that some devices
+                    can scan to connect to the AP.
+                </p>
+                <p>
+                    Once connected to the device's AP a captive-portal page will be displayed and you will be able to
+                    connect to the page and scan for local access points and configure the device's wifi.
+                </p>
+                <h2 class="mt-5">Claiming the Badge</h2>
+                <p>
+                    When the device is powered on for the first time with the Shadowbadge firmware it needs to be claimed
+                    (registered to a given user) before it can be configured. (Also, after a settings reset.) Before
+                    the device can be claimed it needs to connect to wifi.
+                </p>
+                <p>
+                    When the device is connected to Wifi and ready to be claimed it will show a screen with a QR code
+                    that can be scanned in order to claim the badge. This will take you through the process to register
+                    with Shadowbadge (if you have not already) and then claim the badge for you.
+                </p>
+                <p>
+                    Once the badge is claimed the screen will change to show the claim status. The name of the badge
+                    will be the same as the AP name during installation and will be shown in your browser and on the
+                    badge details screen.
+                </p>
+                <p>
+                    Once you are on the badge details screen you can configure the badge to your specifications.
+                </p>
+                <h2 class="mt-5">Configuring the Badge</h2>
+                <p>
+                    The Shadowbadge web application provides a form for configuring various information that will be
+                    shown in the standard layout of the badge. This includes the icon, the header (your name), and
+                    other lines on the badge. The web UI will provide suggestions for these fields but feel free to be
+                    <em>appropriately</em> creative.
+                </p>
+                <h2 class="mt-5">Unclaiming a Badge</h2>
+                <p>
+                    In the Shadowbadge web application you have the ability to "unclaim" a badge. This is useful if you
+                    want to pass the badge to someone else. Once you click "unclaim" and then "unclaim" again the badge will
+                    be removed from your list of badges.
+                <p>
+                    Next time the badge updates it will revert to claim mode and be ready to be scanned and claimed. This may
+                    require that you put the badge in "refresh" mode either by holding the center button and turing the unit on
+                    or, if the unit is already on, pressing the center button to trigger a refresh cycle.
+                </p>
+                <h2 class="mt-5">Resetting a Badge</h2>
+                <p>
+                    Holding "up" on the badge's five-way joystick will cause the badge to reset during boot. It will "forget"
+                    all of the wifi settings and the configuration it previously downloaded from the Shadowbadge server.
+                </p>
+                <h2 class="mt-5">Power Optimization</h2>
+                <p>
+                    While the Badgy device is power efficient the best way to conserve power is to allow the device to update and
+                    then turn it off. The screen will stay sharp for 24-48 hours or so before it fades some and needs to be
+                    updated again.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>

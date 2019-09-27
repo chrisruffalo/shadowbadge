@@ -3,6 +3,17 @@
 
     <title>Shadowbadge :: Home</title>
 
+    <div th:if="${error}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h5>Error!</h5>
+            <hr>
+            <p>An error occurred while processing your request: <span th:text="${errorMsg}"></span></p>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    </div>
+
     <div th:if="${badges!=null and !badges.empty}">
         <table class="table shadowbadge-table-hover">
            <thead>
@@ -13,8 +24,15 @@
            </thead>
             <tbody>
                 <tr th:each="badge : ${badges}" class="detailRow" th:onclick="@{|javascript:rowClicked('/badges/secure/${badge.badgeId}/detail.html')|}">
-                    <td class="text-truncate align-middle"><strong><span th:text="${badge.info.displayName}"></span></strong></td>
-                    <td class="text-right align-middle"><button class="btn btn-danger" th:onclick="@{|javascript:unlcaimModal(event, '#unclaimModal', '#unclaimModalDisplay', '#unclaimLocation', '${badge.info.displayName}', '/badges/secure/${badge.badgeId}/unclaimAction')|}">Unclaim</button></td>
+                    <td class="text-truncate align-middle">
+                        <div>
+                            <p style="margin-bottom: 0px"><strong><span th:text="${#strings.abbreviate(badge.info.displayName, 25)}"></span></strong></p>
+                            <p style="margin-bottom: 0px"><small><span class="text-muted" th:text="${#strings.abbreviate(badge.shortId, 30)}"></span></small></p>
+                        </div>
+                    </td>
+                    <td class="text-right align-middle">
+                        <button class="btn btn-danger" th:onclick="@{|javascript:unlcaimModal(event, '#unclaimModal', '#unclaimModalDisplay', '#unclaimLocation', '${badge.info.displayName}', '/badges/secure/${badge.badgeId}/unclaimAction')|}">Unclaim</button>
+                    </td>
                 </tr>
             </tbody>
         </table>

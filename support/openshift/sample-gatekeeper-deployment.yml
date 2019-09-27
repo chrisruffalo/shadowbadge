@@ -1,0 +1,70 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: gatekeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: gatekeeper
+  template:
+    metadata:
+      labels:
+        app: shadowbadge
+        component: gatekeeper
+        role: security
+    spec:
+      volumes:
+        - name: app-shadowbadge-certs-volume
+          configMap:
+            name: app-shadowbadge-certs
+            defaultMode: 420
+      containers:
+        - resources: {}
+          terminationMessagePath: /dev/termination-log
+          name: gatekeeper
+          ports:
+            - containerPort: 8443
+              protocol: TCP
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: app-shadowbadge-certs-volume
+              mountPath: /pki/
+          terminationMessagePolicy: File
+          image: >-
+            image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/gatekeeper
+          args:
+            # insanely helpful reference: https://github.com/keycloak/keycloak-gatekeeper/blob/master/doc.go
+            - '--listen=0.0.0.0:8443'
+            - '--verbose=true'
+            - '--client-id=gatekeeper'
+            - '--client-secret=<SECRET>'
+            - '--discovery-url=https://<AUTH ROUTE>/auth/realms/<REALM>'
+            - '--enable-logging=true'
+            - '--tls-cert=/pki/cert.pem'
+            - '--tls-private-key=/pki/key.pem'
+            - '--tls-ca-certificate=/pki/ca.pem'
+            - '--redirection-url=https://<AUTH ROUTE>>'
+            - '--upstream-url=http://<HOSTED SERVICE>:8080'
+            - '--enable-refresh-tokens=true'
+            - '--encryption-key=CHANGEME'
+            - '--enable-default-deny=false'
+            - '--resources=uri=/badges/secure/*'
+            - '--resources=uri=/private/*'
+            - '--preserve-host=true'
+            - '--enable-security-filter=true'
+            - '--hostnames=<AUTH ROUTE>>'
+            - '--cors-origins=<APP ROUTE>,<AUTH ROUTE>'
+            - '--enable-logout-redirect=true'
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

@@ -5,6 +5,7 @@ import com.chrisruffalo.shadowbadge.exceptions.RepositoryException;
 import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
 import com.chrisruffalo.shadowbadge.model.Badge;
 import com.chrisruffalo.shadowbadge.model.BadgeInfo;
+import com.chrisruffalo.shadowbadge.model.IconType;
 import com.chrisruffalo.shadowbadge.services.support.Secure;
 import com.chrisruffalo.shadowbadge.services.support.ThymeLeafStreamingOutput;
 import com.chrisruffalo.shadowbadge.templates.TemplateEngineFactory;
@@ -31,6 +32,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -68,7 +70,6 @@ public class BadgeResource {
     @PUT
     @POST
     @Path("secure/{badgeId}/claim")
-    @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
     public Response claim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
         return Response.ok(badges.claim(badgeId, ownerId)).build();
@@ -76,27 +77,18 @@ public class BadgeResource {
 
     @Secure
     @GET // semantically dubious
-    @Path("secure/{badgeId}/claim.html")
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("secure/{badgeId}/claimAction")
     @Produces(MediaType.TEXT_HTML)
     public Response claimHtml(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
-        // create context
-        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
-
-        context.setVariable("badgeid", badgeId);
-        context.setVariable("userid", ownerId);
 
         try {
             final Badge badge = badges.claim(badgeId, ownerId);
-            context.setVariable("claimed", badge);
-            context.setVariable("error", false);
         } catch (ShadowbadgeException e) {
-            // this is a claim error
-            context.setVariable("error", true);
-            context.setVariable("errorText", e.getMessage());
+            // this is "better-ish"
+            return this.home(badgeId, ownerId, e);
         }
 
-        return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/claim.html", context)).build();
+        return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/secure/%s/detail.html", badgeId), this.servletRequest))).build();
     }
 
     @Secure
@@ -105,13 +97,22 @@ public class BadgeResource {
     @Produces(MediaType.TEXT_HTML)
     public Response home(
         @PathParam("badgeId") final String badgeId,
-        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId,
-        @HeaderParam(Constants.X_AUTH_EMAIL) final String email
+        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
+        return this.home(badgeId, ownerId, null);
+    }
+
+    private Response home(final String badgeId, final String ownerId, final Exception error) {
         // create context
         final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
         context.setVariable("userid", ownerId);
-        context.setVariable("email", email);
+
+        if (error != null) {
+            context.setVariable("error", true);
+            context.setVariable("errorMsg", error.getMessage());
+        } else {
+            context.setVariable("error", false);
+        }
 
         // get by owner id
         final List<Badge> list = badges.listForOwner(ownerId);
@@ -124,7 +125,7 @@ public class BadgeResource {
     @GET
     @Path("{badgeId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response info(@PathParam("badgeId") final String badgeId) throws ShadowbadgeException {
+    public Response detail(@PathParam("badgeId") final String badgeId) throws ShadowbadgeException {
         this.logger.info("Got request for json info badge='{}'", badgeId);
         final Badge badge = badges.getByBadgeId(badgeId);
         if (badge == null) {
@@ -137,7 +138,7 @@ public class BadgeResource {
     @GET
     @Path("secure/{badgeId}/detail.html")
     @Produces(MediaType.TEXT_HTML)
-    public Response infoHtml(
+    public Response detailHtml(
         @PathParam("badgeId") final String badgeId,
         @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId,
         @HeaderParam(Constants.X_AUTH_EMAIL) final String email
@@ -205,7 +206,8 @@ public class BadgeResource {
         @FormParam("title") final String title,
         @FormParam("group") final String group,
         @FormParam("location") final String location,
-        @FormParam("tagline") final String tagline
+        @FormParam("tagline") final String tagline,
+        @FormParam("icon") final String iconString
     ) throws RepositoryException {
         BadgeInfo info = badges.info(badgeId);
         if (null == info) {
@@ -217,6 +219,14 @@ public class BadgeResource {
         info.setTitle(title);
         info.setLocation(location);
         info.setTagline(tagline);
+
+        // try and load the icon from the enum, if it fails for any reason use the default icon
+        try {
+            final IconType icon = IconType.valueOf(iconString);
+            info.setIcon(icon);
+        } catch (Exception ex) {
+            info.setIcon(IconType.RED_HAT);
+        }
 
         // update individual
         badges.updateInfo(badgeId, ownerId, info);

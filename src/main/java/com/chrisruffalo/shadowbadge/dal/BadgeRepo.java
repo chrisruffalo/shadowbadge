@@ -4,6 +4,7 @@ import com.chrisruffalo.shadowbadge.exceptions.RepositoryException;
 import com.chrisruffalo.shadowbadge.model.Badge;
 import com.chrisruffalo.shadowbadge.model.BadgeInfo;
 import com.chrisruffalo.shadowbadge.model.ConfigurationStatus;
+import com.oblac.nomen.Nomen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +19,9 @@ import java.util.List;
 public class BadgeRepo extends AbstractRepo<Badge> {
 
     public static final String REPO = "BADGES";
+
+    // build once
+    private Nomen nomen = Nomen.est().adjective().adjective().animal();
 
     private Logger logger = LoggerFactory.getLogger(BadgeRepo.class);
 
@@ -69,8 +73,12 @@ public class BadgeRepo extends AbstractRepo<Badge> {
             badge = new Badge();
             badge.setInfo(new BadgeInfo());
             badge.setBadgeId(badgeId);
+            badge.setShortId(this.uniqueShortId());
             badge.setOwnerId(ownerId);
             badge.setStatus(ConfigurationStatus.CLAIMED);
+
+            // set display name
+            badge.getInfo().setDisplayName("Shadowbadge " + badgeId.substring(0, Math.min(8, badgeId.length())));
 
             // persist
             try {
@@ -109,6 +117,9 @@ public class BadgeRepo extends AbstractRepo<Badge> {
             return null;
         }
 
+        // update inside of a transaction if needed
+        this.updateShortBadgeId(existingBadge);
+
         return existingBadge.getInfo();
     }
 
@@ -133,6 +144,11 @@ public class BadgeRepo extends AbstractRepo<Badge> {
 
         if (!existingBadge.getOwnerId().equalsIgnoreCase(ownerId)) {
             throw new RepositoryException(REPO, "Cannot update badge info from a different user id");
+        }
+
+        // update short if one is not found
+        if (null == existingBadge.getShortId() || existingBadge.getShortId().isEmpty()) {
+            existingBadge.setShortId(this.uniqueShortId());
         }
 
         existingBadge.setStatus(ConfigurationStatus.CONFIGURED);
@@ -169,8 +185,10 @@ public class BadgeRepo extends AbstractRepo<Badge> {
         }
 
         // change badge id and reset configuration status
-        existingBadge.setStatus(ConfigurationStatus.NONE);
+        existingBadge.setShortId(null);
+        existingBadge.setStatus(ConfigurationStatus.UNCLAIMED);
         existingBadge.setOwnerId(null);
+        existingBadge.setInfo(null);
 
         try {
             this.em.merge(existingBadge);
@@ -179,5 +197,32 @@ public class BadgeRepo extends AbstractRepo<Badge> {
         }
 
         logger.info("Unclaimed badge='{}'", badgeId);
+    }
+
+    @Transactional
+    private void updateShortBadgeId(final Badge existingBadge) {
+        // try and create new short id if one does not exist
+        if (null == existingBadge.getShortId() || existingBadge.getShortId().isEmpty()) {
+            existingBadge.setShortId(this.uniqueShortId());
+            try {
+                this.em.merge(existingBadge);
+            } catch (PersistenceException ex) {
+                this.logger.error("Could not update shortId for badge='{}'", existingBadge.getBadgeId());
+                this.logger.error("Exception", ex);
+            }
+        }
+    }
+
+    /**
+     * Generates a new id that isn't in use, probably paranoid
+     * @return new id string
+     */
+    @Transactional
+    private String uniqueShortId() {
+        String shortId;
+        do {
+            shortId = nomen.get();
+        } while (null != this.get(Badge.class, shortId, Badge.QUERY_GET_SHORT_ID, Badge.PARAM_SHORT_ID));
+        return shortId;
     }
 }
