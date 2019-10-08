@@ -26,15 +26,17 @@ spec:
           ports:
             - containerPort: 8443
               protocol: TCP
+            - containerPort: 8080
+              protocol: TCP
           imagePullPolicy: Always
           volumeMounts:
             - name: app-shadowbadge-certs-volume
               mountPath: /pki/
           terminationMessagePolicy: File
-          image: >-
-            image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/gatekeeper
+          image: 'image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/gatekeeper'
           args:
             # insanely helpful reference: https://github.com/keycloak/keycloak-gatekeeper/blob/master/doc.go
+            - '--listen-http=0.0.0.0:8080'
             - '--listen=0.0.0.0:8443'
             - '--verbose=true'
             - '--client-id=gatekeeper'
@@ -50,12 +52,13 @@ spec:
             - '--encryption-key=CHANGEME'
             - '--enable-default-deny=false'
             - '--resources=uri=/badges/secure/*'
-            - '--resources=uri=/private/*'
+            - '--resources=uri=/*|white-listed=true'
             - '--preserve-host=true'
             - '--enable-security-filter=true'
             - '--hostnames=<AUTH ROUTE>>'
             - '--cors-origins=<APP ROUTE>,<AUTH ROUTE>'
             - '--enable-logout-redirect=true'
+            - '--enable-https-redirection=true'
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
