@@ -1,5 +1,6 @@
 package com.chrisruffalo.shadowbadge.web;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,7 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Enumeration;
 
 /**
  * Sets up to handle welcome pages
@@ -27,6 +29,9 @@ import java.io.IOException;
     }
 )
 public class WelcomeFilter implements Filter {
+
+    @ConfigProperty(name = "shadowbadge.log.headers", defaultValue = "false")
+    String logHeaders;
 
     private final String ROOT = "/";
 
@@ -46,6 +51,15 @@ public class WelcomeFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         if (servletRequest instanceof HttpServletRequest) {
             final HttpServletRequest request = (HttpServletRequest)servletRequest;
+
+            // log headers when the setting is enabled
+            if ("true".equalsIgnoreCase(logHeaders)) {
+                final Enumeration<String> headerNames = request.getHeaderNames();
+                while (headerNames.hasMoreElements()) {
+                    final String headerName = headerNames.nextElement();
+                    logger.info("{} = {}", headerName, request.getHeader(headerName));
+                }
+            }
 
             // only handle GET requests
             if (!"GET".equalsIgnoreCase(request.getMethod())) {

@@ -4,6 +4,7 @@ import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
 import com.chrisruffalo.shadowbadge.services.support.ThymeLeafStreamingOutput;
 import com.chrisruffalo.shadowbadge.templates.TemplateEngineFactory;
 import com.chrisruffalo.shadowbadge.web.Constants;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.thymeleaf.TemplateEngine;

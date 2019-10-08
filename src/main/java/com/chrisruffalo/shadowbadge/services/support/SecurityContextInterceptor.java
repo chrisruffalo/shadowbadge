@@ -44,7 +44,7 @@ public class SecurityContextInterceptor implements ContainerRequestFilter {
 
         // no security context provided
         if (null == email || email.isEmpty() || null == authId || authId.isEmpty()) {
-            logger.warn("Denied secure invoke: {}#{} (subject={}, email={})", invokingClass.getSimpleName(), invokingMethod.getName(), authId, email);
+            logger.debug("Denied secure invoke: {}#{} (subject={}, email={})", invokingClass.getSimpleName(), invokingMethod.getName(), authId, email);
             containerRequestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());
         } else {
             logger.debug("Secure invoke: {}#{} (subject={}, email={})", invokingClass.getSimpleName(), invokingMethod.getName(), authId, email);

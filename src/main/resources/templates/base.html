@@ -26,13 +26,13 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/downloads.html">Downloads</a>
                     </li>
-                    <li th:if="${userid==null or #strings.isEmpty(userid)}" class="nav-item">
+                    <li th:classappend="${userid==null or #strings.isEmpty(userid)} ? noop : d-none" class="nav-item logged-out">
                         <a class="nav-link" href="/badges/secure/badges.html">Login</a>
                     </li>
-                    <li th:if="${userid!=null and !#strings.isEmpty(userid)}" class="nav-item">
+                    <li th:classappend="${userid!=null and !#strings.isEmpty(userid)} ? noop : d-none" class="nav-item logged-in">
                         <a class="nav-link" href="/badges/secure/badges.html">Badges</a>
                     </li>
-                    <li th:if="${userid!=null and !#strings.isEmpty(userid)}" class="nav-item">
+                    <li th:classappend="${userid!=null and !#strings.isEmpty(userid)} ? noop : d-none" class="nav-item logged-in">
                         <a class="nav-link" href="/account">Account</a>
                     </li>
                     <li th:if="${userid!=null and !#strings.isEmpty(userid)}" class="nav-item">
@@ -58,6 +58,27 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <!-- shadowbadge logic -->
     <script src="/js/shadowbadge.js"></script>
+
+    <!-- alternate way to validate login if no userid is available -->
+    <script th:if="${userid==null or #strings.isEmpty(userid)}">
+        var req = new XMLHttpRequest();
+        req.open('GET', "/badges/secure/badges.html", true);
+
+        // if we can cleanly request the badges page then we know that
+        // the user is logged in
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    $('.logged-out').addClass("d-none");
+                    $('.logged-in').removeClass("d-none");
+                }
+            }
+        }
+
+        req.send();
+    </script>
 </body>
 </html>
