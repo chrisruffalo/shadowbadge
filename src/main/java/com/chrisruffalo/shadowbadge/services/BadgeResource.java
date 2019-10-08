@@ -7,6 +7,7 @@ import com.chrisruffalo.shadowbadge.model.Badge;
 import com.chrisruffalo.shadowbadge.model.BadgeInfo;
 import com.chrisruffalo.shadowbadge.model.IconType;
 import com.chrisruffalo.shadowbadge.model.LayoutStyle;
+import com.chrisruffalo.shadowbadge.model.QRType;
 import com.chrisruffalo.shadowbadge.services.support.Secure;
 import com.chrisruffalo.shadowbadge.services.support.ThymeLeafStreamingOutput;
 import com.chrisruffalo.shadowbadge.templates.TemplateEngineFactory;
@@ -90,21 +91,21 @@ public class BadgeResource {
             return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/secure/%s/detail.html", badgeId), this.servletRequest))).build();
         } catch (ShadowbadgeException e) {
             // this is "better-ish"
-            return this.home(ownerId, e);
+            return this.badges(ownerId, e);
         }
     }
 
     @Secure
     @GET
-    @Path("secure/home.html")
+    @Path("secure/badges.html")
     @Produces(MediaType.TEXT_HTML)
-    public Response home(
+    public Response badges(
         @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        return this.home(ownerId, null);
+        return this.badges(ownerId, null);
     }
 
-    private Response home(final String ownerId, final Exception error) {
+    private Response badges(final String ownerId, final Exception error) {
         // create context
         final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
         context.setVariable("userid", ownerId);
@@ -121,7 +122,7 @@ public class BadgeResource {
         context.setVariable("badges", list);
 
         // return streaming response
-        return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/home.html", context)).build();
+        return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/badges.html", context)).build();
     }
 
     @GET
@@ -168,7 +169,7 @@ public class BadgeResource {
 
         // check owner id
         if (ownerId == null || !ownerId.equalsIgnoreCase(badge.getOwnerId())) {
-            return this.home(ownerId, new ShadowbadgeException("You have no claim on the selected badge."));
+            return this.badges(ownerId, new ShadowbadgeException("You have no claim on the selected badge."));
         }
 
         final BadgeInfo info = badge.getInfo();
@@ -206,7 +207,7 @@ public class BadgeResource {
     public Response unclaimAction(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
         this.badges.unclaim(badgeId, ownerId);
         // if all goes ok, return home
-        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/home.html", this.servletRequest))).build();
+        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/badges.html", this.servletRequest))).build();
     }
 
     @Secure
@@ -224,9 +225,15 @@ public class BadgeResource {
         @FormParam("location") final String location,
         @FormParam("tagline") final String tagline,
         @FormParam("icon") final String iconString,
-        @FormParam("style") final String styleString
+        @FormParam("style") final String styleString,
+        @FormParam("qrType") final String qrTypeString,
+        @FormParam("customQrCode") final String customQrCode
     ) throws RepositoryException {
-        BadgeInfo info = badges.info(badgeId);
+        // get badge so we can get short id and calculate url if needed
+        Badge badge = badges.getByBadgeId(badgeId);
+
+        // get info from badge
+        BadgeInfo info = badge.getInfo();
         if (null == info) {
             info = new BadgeInfo();
         }
@@ -253,10 +260,26 @@ public class BadgeResource {
             info.setStyle(LayoutStyle.ICON_RIGHT);
         }
 
-        // update individual
+        try {
+            final QRType qrType = QRType.valueOf(qrTypeString);
+            info.setQrType(qrType);
+        } catch (Exception ex) {
+            info.setQrType(QRType.RELATIVE);
+        }
+
+        // calculate QR code if relative
+        if (QRType.RELATIVE.equals(info.getQrType())) {
+            info.setQrCode(String.format("/badges/%s/seen", badge.getShortId()));
+        } else if(QRType.CUSTOM.equals(info.getQrType())) {
+            info.setQrCode(customQrCode);
+        } else if(QRType.NONE.equals(info.getQrType())) {
+            info.setQrCode("");
+        }
+
+        // update info
         badges.updateInfo(badgeId, ownerId, info);
 
-        // if all goes ok, return home
-        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/home.html", this.servletRequest))).build();
+        // if all goes ok, return to badges page
+        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/badges.html", this.servletRequest))).build();
     }
 }

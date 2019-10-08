@@ -3,8 +3,6 @@ package com.chrisruffalo.shadowbadge.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.oblac.nomen.Nomen;
-import io.vertx.core.eventbus.Message;
 
 import javax.persistence.Column;
 import javax.persistence.Embedded;
@@ -88,10 +86,6 @@ public class Badge extends BaseEntity {
     @Column
     private ConfigurationStatus status = ConfigurationStatus.NONE;
 
-    @Transient
-    @JsonInclude
-    private String url;
-
     @Embedded
     @JsonUnwrapped
     private BadgeInfo info;
@@ -129,13 +123,6 @@ public class Badge extends BaseEntity {
 
     public void setShortId(String shortId) {
         this.shortId = shortId;
-    }
-
-    public String getUrl() {
-        if (null == this.url || this.url.isEmpty()) {
-            this.url = String.format("/badges/%s/capture", this.getShortId());
-        }
-        return this.url;
     }
 
     public ConfigurationStatus getStatus() {
@@ -187,11 +174,8 @@ public class Badge extends BaseEntity {
             fields.add(this.getInfo().getTagline());
             fields.add(this.getInfo().getIcon().name());
             fields.add(this.getInfo().getStyle().name());
-        }
-
-        // other fields that might change too
-        if (null != this.getUrl()) {
-            fields.add(this.getUrl());
+            fields.add(this.getInfo().getQrType().name());
+            fields.add(this.getInfo().getQrCode());
         }
 
         if (null != this.getOwnerId()) {

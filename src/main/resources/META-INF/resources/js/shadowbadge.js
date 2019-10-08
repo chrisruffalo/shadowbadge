@@ -14,3 +14,14 @@ function unlcaimModal(event, modalId, spanId, linkId, badgeName, unclaimHref) {
     // show modal
     $(modalId).modal('show');
 }
+
+function showHideCustomQr() {
+    var dropdownValue = $('#qrTypeSelect option:selected').val();
+
+    if ("CUSTOM" === dropdownValue) {
+        $('#customQRFormGroup').removeClass("d-none")
+    } else {
+        $('#customQRFormGroup').addClass("d-none")
+    }
+
+}

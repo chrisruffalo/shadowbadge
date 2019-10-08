@@ -26,13 +26,16 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/downloads.html">Downloads</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/badges/secure/home.html">Badges</a>
+                    <li th:if="${userid==null or #strings.isEmpty(userid)}" class="nav-item">
+                        <a class="nav-link" href="/badges/secure/badges.html">Login</a>
                     </li>
-                    <li class="nav-item">
+                    <li th:if="${userid!=null and !#strings.isEmpty(userid)}" class="nav-item">
+                        <a class="nav-link" href="/badges/secure/badges.html">Badges</a>
+                    </li>
+                    <li th:if="${userid!=null and !#strings.isEmpty(userid)}" class="nav-item">
                         <a class="nav-link" href="/account">Account</a>
                     </li>
-                    <li class="nav-item">
+                    <li th:if="${userid!=null and !#strings.isEmpty(userid)}" class="nav-item">
                         <a class="nav-link" href="/oauth/logout">Logout</a>
                     </li>
                 </ul>

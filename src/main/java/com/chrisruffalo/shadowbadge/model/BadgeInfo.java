@@ -1,5 +1,7 @@
 package com.chrisruffalo.shadowbadge.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
@@ -33,6 +35,14 @@ public class BadgeInfo {
 
     @Column
     private LayoutStyle style = LayoutStyle.ICON_RIGHT;
+
+    @Column(name = "qr_type")
+    @JsonProperty("qr_type")
+    private QRType qrType = QRType.RELATIVE;
+
+    @Column(name = "qr_code")
+    @JsonProperty("url") // set for backwards compat
+    private String qrCode = "";
 
     public String getDisplayName() {
         if (null == displayName || displayName.isEmpty()) {
@@ -105,5 +115,27 @@ public class BadgeInfo {
 
     public void setStyle(LayoutStyle style) {
         this.style = style;
+    }
+
+    public QRType getQrType() {
+        if (this.qrType == null) {
+            this.qrType = QRType.RELATIVE;
+        }
+        return qrType;
+    }
+
+    public void setQrType(QRType qrType) {
+        this.qrType = qrType;
+    }
+
+    public String getQrCode() {
+        if (this.qrCode == null) {
+            this.qrCode = "";
+        }
+        return qrCode;
+    }
+
+    public void setQrCode(String qrCode) {
+        this.qrCode = qrCode;
     }
 }

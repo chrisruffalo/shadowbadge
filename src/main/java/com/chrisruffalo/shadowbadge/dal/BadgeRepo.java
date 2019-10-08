@@ -112,23 +112,6 @@ public class BadgeRepo extends AbstractRepo<Badge> {
     }
 
     @Transactional
-    public BadgeInfo info(final String badgeId) throws RepositoryException {
-        if (null == badgeId || badgeId.isEmpty()) {
-            throw new RepositoryException("Cannot get info for a badge that does not exist");
-        }
-
-        final Badge existingBadge = this.get(Badge.class, badgeId, Badge.QUERY_GET_BADGE_ID, Badge.PARAM_BADGE_ID);
-        if (null == existingBadge) {
-            return null;
-        }
-
-        // update inside of a transaction if needed
-        this.updateShortBadgeId(existingBadge);
-
-        return existingBadge.getInfo();
-    }
-
-    @Transactional
     public Badge updateInfo(final String badgeId, final String ownerId, final BadgeInfo info) throws RepositoryException {
         if (null == badgeId || badgeId.isEmpty()) {
             throw new RepositoryException("Cannot modify badge info without providing a badge id");
@@ -190,11 +173,11 @@ public class BadgeRepo extends AbstractRepo<Badge> {
         }
 
         // change badge id and reset configuration status
-        existingBadge.setShortId(null);
+        existingBadge.setShortId("");
         existingBadge.setStatus(ConfigurationStatus.UNCLAIMED);
-        existingBadge.setOwnerId(null);
-        existingBadge.setInfo(null);
-        existingBadge.setSecret(null);
+        existingBadge.setOwnerId("");
+        existingBadge.setInfo(new BadgeInfo());
+        existingBadge.setSecret("");
 
         try {
             this.em.merge(existingBadge);
