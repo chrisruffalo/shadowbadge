@@ -35,7 +35,7 @@
                     <li th:classappend="${userid!=null and !#strings.isEmpty(userid)} ? noop : d-none" class="nav-item logged-in">
                         <a class="nav-link" href="/account">Account</a>
                     </li>
-                    <li th:if="${userid!=null and !#strings.isEmpty(userid)}" class="nav-item">
+                    <li th:classappend="${userid!=null and !#strings.isEmpty(userid)} ? noop : d-none" class="nav-item logged-in">
                         <a class="nav-link" href="/oauth/logout">Logout</a>
                     </li>
                 </ul>

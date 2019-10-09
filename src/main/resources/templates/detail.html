@@ -63,17 +63,26 @@
             </div>
             <div id="customQRFormGroup" class="form-group" th:classappend="${#strings.equals(info.qrType, 'CUSTOM')} ? noop : d-none">
                 <label for="inputCustomQR">Custom QR Code</label>
-                <input type="text" maxlength="400" th:value="${info.qrCode}" class="form-control" id="inputCustomQR" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                <input type="text" maxlength="400" th:value="${info.qrCode}" class="form-control qrcode-text" id="inputCustomQR" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                <!-- qr bits from: https://www.sitepoint.com/create-qr-code-reader-mobile-website/ -->
+                <label class=qrcode-text-btn>
+                    <input type=file
+                           accept="image/*"
+                           onchange="openQRCamera(this);"
+                           tabindex=-1>
+                </label>
                 <small id="inputCustomQRHelp" class="form-text text-muted">Data that will be used for custom QR code on badge. (Max 400 characters.)</small>
+                <img class="d-none" src="#" id="qr"/>
             </div>
             <br/>
             <button type="submit" class="btn btn-primary">Submit</button>
             <a th:href="@{|/badges/secure/badges.html|}" class="btn btn-secondary">Cancel</a>
         </form>
         <br/><br/><br/><br/>
+        <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
     </div>
 
     <div th:if="${info == null}">
-        <h2>An error occurred while fetching badge details for badge. <a href="home.html">Return home.</a></h2>
+        <h2>An error occurred while fetching badge details for badge. <a href="badges.html">Return to badges.</a></h2>
     </div>
 </html>

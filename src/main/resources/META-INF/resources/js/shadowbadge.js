@@ -23,5 +23,27 @@ function showHideCustomQr() {
     } else {
         $('#customQRFormGroup').addClass("d-none")
     }
+}
 
+function openQRCamera(node) {
+    var reader = new FileReader();
+    reader.onload = function() {
+        // load src into img
+        $("#qr").attr('src', reader.result);
+
+        node.value = "";
+
+        const codeReader = new ZXing.BrowserQRCodeReader();
+
+        try {
+            result = codeReader.decodeFromImage('qr').then((result) => {
+                if (result !== null && result.text !== null) {
+                    $('#inputCustomQR').val(result.text);
+                }
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    reader.readAsDataURL(node.files[0]);
 }

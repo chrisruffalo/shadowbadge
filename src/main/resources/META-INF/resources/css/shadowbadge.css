@@ -6,3 +6,41 @@
     background-color: rgba(200, 128, 128, 0.75);
     color: #ffffff;
 }
+
+.qrcode-text-btn {
+    display: none;
+}
+
+@media only screen and (max-device-width:750px) {
+    .qrcode-text-btn {
+      display: inline-block;
+      height: 1em;
+      width: 1em;
+      background: url("/img/qr_icon.svg") 50% 50% no-repeat;
+      cursor: pointer;
+    }
+
+    .qrcode-text-btn > input[type=file] {
+      position: absolute;
+      overflow: hidden;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
+    .qrcode-text {
+        box-sizing: border-box;
+        vertical-align: middle;
+    }
+
+    .qrcode-text {
+        display: inline-block !important;
+        width: 93% !important;
+        margin-right: 0;
+        vertical-align: middle;
+    }
+
+    .qrcode-text + .qrcode-text-btn {
+        vertical-align: middle;
+    }
+}
