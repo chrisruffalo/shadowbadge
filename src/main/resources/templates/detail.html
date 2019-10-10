@@ -61,25 +61,28 @@
                 </select>
                 <small id="qrTypeSelectHelp" class="form-text text-muted">The type of QR code that will be shown on the badge.</small>
             </div>
-            <div id="customQRFormGroup" class="form-group" th:classappend="${#strings.equals(info.qrType, 'CUSTOM')} ? noop : d-none">
-                <label for="inputCustomQR">Custom QR Code</label>
-                <input type="text" maxlength="400" th:value="${info.qrCode}" class="form-control qrcode-text" id="inputCustomQR" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
-                <!-- qr bits from: https://www.sitepoint.com/create-qr-code-reader-mobile-website/ -->
-                <label class=qrcode-text-btn>
-                    <input type=file
-                           accept="image/*"
-                           onchange="openQRCamera(this);"
-                           tabindex=-1>
-                </label>
-                <small id="inputCustomQRHelp" class="form-text text-muted">Data that will be used for custom QR code on badge. (Max 400 characters.)</small>
-                <img class="d-none" src="#" id="qr"/>
+            <div id="customQrFormRow" class="form-row" th:classappend="${#strings.equals(info.qrType, 'CUSTOM')} ? noop : d-none">
+                <div id="customQRFormGroup" class="form-group col-lg-11 col-10">
+                    <label for="inputCustomQR">Custom QR Code</label>
+                    <input id="inputCustomQR" type="text" maxlength="400" th:value="${info.qrCode}" class="form-control qrcode-text" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                    <small id="inputCustomQRHelp" class="form-text text-muted">Data that will be used for custom QR code on badge. (Max 400 characters.)</small>
+                </div>
+                <div class="col-lg-1 col-2">
+                    <!-- qr bits from: https://www.sitepoint.com/create-qr-code-reader-mobile-website/ -->
+                    <label class="" for="none">&nbsp;</label>
+                    <div class="">
+                        <label id="qr-btn" class="btn btn-qr" for="qrUpload">
+                            <input id="qrUpload" type=file accept="image/*" onchange="readFromServlet(this);" tabindex=-1 hidden>
+                            <i class="fa fa-qrcode"></i><i class="fa fa-level-up" aria-hidden="true"></i>
+                        </label>
+                    </div>
+                </div>
             </div>
             <br/>
             <button type="submit" class="btn btn-primary">Submit</button>
             <a th:href="@{|/badges/secure/badges.html|}" class="btn btn-secondary">Cancel</a>
         </form>
         <br/><br/><br/><br/>
-        <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
     </div>
 
     <div th:if="${info == null}">

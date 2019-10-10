@@ -80,4 +80,11 @@ public class WebResource {
         return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/downloads.html", context)).build();
     }
 
+    // simple health service
+    @GET
+    @Path("/health")
+    public Response health() {
+        return Response.ok().build();
+    }
+
 }

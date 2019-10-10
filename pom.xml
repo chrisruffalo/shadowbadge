@@ -34,6 +34,10 @@
       <artifactId>quarkus-resteasy-jackson</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-multipart-provider</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-hibernate-orm</artifactId>
     </dependency>
@@ -68,6 +72,26 @@
       <version>2.0.0</version>
     </dependency>
 
+    <!-- machine learning-based qr detection -->
+    <dependency>
+      <groupId>org.boofcv</groupId>
+      <artifactId>boofcv-core</artifactId>
+      <version>0.34</version>
+    </dependency>
+
+    <!-- zebra crossing qr detection -->
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>3.4.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>javase</artifactId>
+      <version>3.4.0</version>
+    </dependency>
+
+    <!-- testing -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>

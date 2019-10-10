@@ -1,4 +1,4 @@
-package com.chrisruffalo.shadowbadge;
+package com.chrisruffalo.shadowbadge.services;
 
 import com.chrisruffalo.shadowbadge.web.Constants;
 import com.github.database.rider.cdi.api.DBUnitInterceptor;
@@ -14,7 +14,7 @@ import static io.restassured.RestAssured.given;
 
 @QuarkusTest
 @DBUnitInterceptor
-public class BadgeResourceTest extends BaseTest {
+public class BadgeResourceTest extends BaseResourceTest {
 
     @Test
     @DataSet("badges.yml")
