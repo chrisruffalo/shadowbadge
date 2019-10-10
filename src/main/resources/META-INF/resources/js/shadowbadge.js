@@ -51,5 +51,8 @@ function readFromServlet(node) {
         $("#qrUpload").prop("disabled", false);
         $("#qr-btn").removeClass("btn-qr-disabled");
         $("#qr-btn").addClass("btn-qr");
+
+        // clear files
+        node.value = "";
     });
 }

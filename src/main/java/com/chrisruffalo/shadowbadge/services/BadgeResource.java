@@ -132,11 +132,13 @@ public class BadgeResource {
         @PathParam("badgeId") final String badgeId,
         @HeaderParam(Constants.X_SHADOWBADGE_SECRET) final String secret
     ) throws ShadowbadgeException {
-        this.logger.info("requested badge='{}' (secret='{}')", badgeId, secret);
         final Badge badge = badges.getByBadgeId(badgeId);
         if (badge == null) {
+            this.logger.info("no badge for badge='{}'", badgeId);
             return Response.noContent().build();
         }
+
+        this.logger.info("requested badge='{}' (secret='{}', hash='{}')", badgeId, secret, badge.getHash());
 
         // require that the presented secret equals the secret registered with the badge in order to
         // actually return information. prevents people from randomly browsing looking for badges that

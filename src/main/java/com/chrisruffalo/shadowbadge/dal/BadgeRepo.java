@@ -139,6 +139,7 @@ public class BadgeRepo extends AbstractRepo<Badge> {
             existingBadge.setShortId(this.uniqueShortId());
         }
 
+        final String oldHash = existingBadge.getHash();
         existingBadge.setStatus(ConfigurationStatus.CONFIGURED);
         existingBadge.setInfo(info);
 
@@ -148,7 +149,7 @@ public class BadgeRepo extends AbstractRepo<Badge> {
             throw new RepositoryException("Could not save badge info: %s", ex.getMessage());
         }
 
-        logger.info("Updated badge information for badge='{}'", badgeId);
+        logger.info("Updated badge information for badge='{}' (new_hash='{}', old_hash='{}')", badgeId, existingBadge.getHash(), oldHash);
 
         return existingBadge;
     }
