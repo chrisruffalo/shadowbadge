@@ -3,7 +3,10 @@
 *.iml
 
 # do not commit target dir
-target
+**/target
 
 # quarkus' object store directory is in the root of the project
-ObjectStore
+**/ObjectStore
+
+# ignore binaries
+**/*.bin
