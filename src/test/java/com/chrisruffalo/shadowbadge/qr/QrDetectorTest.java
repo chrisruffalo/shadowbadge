@@ -10,7 +10,7 @@ import javax.inject.Inject;
 public class QrDetectorTest {
 
     @Inject
-    QrDetector detector;
+    QrDetectorService detector;
 
     @Inject
     QrTestCases cases;
@@ -21,9 +21,9 @@ public class QrDetectorTest {
             try {
                 final String result = detector.getQrText(testCase.image);
                 if (testCase.isNotDetected()) {
-                    Assert.assertEquals(testCase.getFile(), "", result);
+                    Assert.assertEquals(testCase.getFileName(), "", result);
                 } else {
-                    Assert.assertEquals(testCase.getFile(), testCase.getExpected(), result);
+                    Assert.assertEquals(testCase.getFileName(), testCase.getExpected(), result);
                 }
             } catch (Exception ex) {
                 Assert.fail(ex.getMessage());

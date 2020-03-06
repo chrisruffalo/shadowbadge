@@ -26,7 +26,8 @@ import java.util.Enumeration;
     dispatcherTypes = DispatcherType.REQUEST,
     value = {
         "/*"
-    }
+    },
+    asyncSupported = true
 )
 public class WelcomeFilter implements Filter {
 

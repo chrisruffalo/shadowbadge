@@ -72,6 +72,13 @@
       <version>2.0.0</version>
     </dependency>
 
+    <!-- apache commons imaging for speed testing over imageio -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-imaging</artifactId>
+      <version>1.0-alpha1</version>
+    </dependency>
+
     <!-- machine learning-based qr detection -->
     <dependency>
       <groupId>org.boofcv</groupId>

@@ -1,6 +1,5 @@
 package com.chrisruffalo.shadowbadge.templates;
 
-import com.chrisruffalo.shadowbadge.services.BadgeResource;
 import org.thymeleaf.cache.ICacheEntryValidity;
 import org.thymeleaf.templateresource.ITemplateResource;
 

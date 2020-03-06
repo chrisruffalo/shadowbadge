@@ -6,7 +6,6 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-import javax.ws.rs.core.MediaType;
 
 @QuarkusTest
 public class QrResourceTest extends BaseResourceTest {
@@ -18,7 +17,7 @@ public class QrResourceTest extends BaseResourceTest {
     public void testQrDetectionService() {
         this.cases.get().forEach((testCase) -> {
                 secure()
-                    .multiPart("qr", testCase.getFile(), testCase.stream())
+                    .multiPart("qr", testCase.getFileName(), testCase.stream())
                     .when()
                     .post("/qr/detect")
                     .then()
