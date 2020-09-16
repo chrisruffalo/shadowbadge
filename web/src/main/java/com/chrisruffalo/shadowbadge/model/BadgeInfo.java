@@ -1,6 +1,7 @@
 package com.chrisruffalo.shadowbadge.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.qute.TemplateData;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -10,6 +11,7 @@ import javax.persistence.Embeddable;
  * serialized to a badge (via JSON) when the badge requests it's own configuration.
  */
 @Embeddable
+@TemplateData
 public class BadgeInfo {
 
     @Column

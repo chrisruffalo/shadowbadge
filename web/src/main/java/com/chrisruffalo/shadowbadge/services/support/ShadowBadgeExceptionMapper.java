@@ -3,7 +3,6 @@ package com.chrisruffalo.shadowbadge.services.support;
 import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.thymeleaf.exceptions.TemplateInputException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.NotFoundException;
@@ -29,10 +28,7 @@ public class ShadowBadgeExceptionMapper implements javax.ws.rs.ext.ExceptionMapp
 
             // print full stack trace for more serious exceptions that need more detail
             // but print small only the error for lesser-known exceptions
-            if (
-                !(throwable instanceof TemplateInputException)
-             && !(throwable instanceof NotFoundException)
-            ) {
+            if (false) {
                 logger.error("Exception", throwable);
             }
         }

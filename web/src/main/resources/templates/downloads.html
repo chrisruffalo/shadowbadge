@@ -1,18 +1,15 @@
-<!DOCTYPE html>
-<html th:replace="~{templates/base.html :: base_page(~{::title}, ~{::div})}">
-
-<title>Shadowbadge :: Downloads</title>
-
-<!-- Page Content -->
-<div class="container">
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="mt-5">Downloads</h1>
-            <ul>
-                <li><a href="https://github.com/chrisruffalo/shadowbadge-web/releases/download/v1.0.8/shadowbadge.bin">Shadowbadge Binary</a> - load this firmware on your Badgy device to participate in Shadowbadge</li>
-            </ul>
+{#include base}
+    {#title}Shadowbadge :: Downloads{/}
+    {#body}
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="mt-5">Downloads</h1>
+                <ul>
+                    <li><a href="https://github.com/chrisruffalo/shadowbadge-web/releases/download/v1.0.8/shadowbadge.bin">Shadowbadge Binary</a> - load this firmware on your Badgy device to participate in Shadowbadge</li>
+                </ul>
+            </div>
         </div>
     </div>
-</div>
-
-</html>
+    {/}
+{/include}

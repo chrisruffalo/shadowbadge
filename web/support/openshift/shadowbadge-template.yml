@@ -77,6 +77,7 @@ objects:
           deploymentConfig: dc-shadowbadge-ui-${OUTPUT_TYPE}
       spec:
         containers:
+        # shadowbadge application container
         - name: shadowbadge-ui-${OUTPUT_TYPE}
           image: "image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/is-shadowbadge-ui-${OUTPUT_TYPE}"
           imagePullPolicy: Always
@@ -89,14 +90,60 @@ objects:
           - name: QUARKUS_DATASOURCE_PASSWORD
             value: "${POSTGRES_PASSWORD}"
           - name: SHADOWBADGE_EXTERNAL_URL
-            value: "${EXTERNAL_URL}"
+            value: "https://${EXTERNAL_HOSTNAME}"
           - name: SHADOWBADGE_ACCOUNT_URL
             value: "${ACCOUNT_URL}"
+          - name: QUARKUS_HTTP_PORT
+            value: 7070
           ports:
-          - containerPort: 8080
+          - containerPort: 7070
             protocol: TCP
           dnsPolicy: ClusterFirst
           restartPolicy: Always
+        # gatekeeper authentication sidecar
+        - name: gatekeeper
+          ports:
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8080
+            protocol: TCP
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: app-shadowbadge-certs-volume
+            mountPath: /pki/
+          terminationMessagePolicy: File
+          terminationMessagePath: /dev/termination-log
+          image: 'image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/gatekeeper'
+          args:
+          # insanely helpful reference: https://github.com/keycloak/keycloak-gatekeeper/blob/master/doc.go
+          - '--listen-http=0.0.0.0:8080'
+          - '--listen=0.0.0.0:8443'
+          - '--verbose=true'
+          - '--client-id=gatekeeper'
+          - '--client-secret=<SECRET>'
+          - '--discovery-url=${KEYCLOAK_URL}/auth/realms/${KEYCLOAK_REALM}'
+          - '--enable-logging=true'
+          - '--tls-cert=/pki/cert.pem'
+          - '--tls-private-key=/pki/key.pem'
+          - '--tls-ca-certificate=/pki/ca.pem'
+          - '--redirection-url=${EXTERNAL_URL}'
+          - '--upstream-url=http://localhost:7070'
+          - '--enable-refresh-tokens=true'
+          - '--encryption-key=CHANGEME'
+          - '--enable-default-deny=false'
+          - '--resources=uri=/badges/secure/*'
+          - '--resources=uri=/*|white-listed=true'
+          - '--preserve-host=true'
+          - '--enable-security-filter=true'
+          - '--hostnames=${EXTERNAL_HOSTNAME}'
+          - '--cors-origins=${EXTERNAL_HOSTNAME},${KEYCLOAK_URL}'
+          - '--enable-logout-redirect=true'
+          - '--enable-https-redirection=true'
+        volumes:
+        - name: app-shadowbadge-certs-volume
+          configMap:
+            name: app-shadowbadge-certs
+            defaultMode: 420
         triggers:
         - type: ImageChange
           imageChangeParams:
@@ -133,8 +180,14 @@ parameters:
   required: true
 - name: POSTGRES_PASSWORD
   required: true
-- name: EXTERNAL_URL
-  description: The external route URL. This template does not configure the routes but if you are using Gatekeeper this is the best way to make Shadowbadge correctly redirect
+- name: KEYCLOAK_URL
+  description: The URL to the keycloak server used for authentication. This should be the entire URL including protocol. It should not end with the trailing slash.
+  required: true
+- name: KEYCLOAK_REALM
+  description: The name of the Keycloak realm to use.
+  required: true
+- name: EXTERNAL_HOSTNAME
+  description: The external route hostname. This template does not configure the routes but if you are using Gatekeeper this is the best way to make Shadowbadge correctly redirect.
   value: ""
 - name: ACCOUNT_URL
   description: The url to the account service on your Keycloak server. If this value is not set the "account" link redirects to the index

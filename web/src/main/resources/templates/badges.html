@@ -1,20 +1,21 @@
-<!DOCTYPE html>
-<html th:replace="~{templates/base.html :: base_page(~{::title}, ~{::div})}">
-
-    <title>Shadowbadge :: Badges</title>
-
-    <div th:if="${error}">
+{#include base}
+    {#title}Shadowbadge :: Badges</>
+    {#body}
+    {#if error}
+    <div>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <h5>Error!</h5>
             <hr>
-            <p>An error occurred while processing your request: <span th:text="${errorMsg}"></span></p>
+            <p>An error occurred while processing your request: <span>{errorMsg}</span></p>
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
     </div>
+    {/if}
 
-    <div th:if="${badges!=null and !badges.empty}">
+    {#if badges != null && badges.size > 0}
+    <div>
         <table class="table shadowbadge-table-hover">
            <thead>
             <tr>
@@ -23,17 +24,19 @@
             </tr>
            </thead>
             <tbody>
-                <tr th:each="badge : ${badges}" class="detailRow" th:onclick="@{|javascript:rowClicked('/badges/secure/${badge.badgeId}/detail.html')|}">
+                {#for badge in badges}
+                <tr class="detailRow" onclick="rowClicked('/badges/secure/{badge.badgeId}/detail.html')">
                     <td class="text-truncate align-middle">
                         <div>
-                            <p style="margin-bottom: 0px"><strong><span th:text="${#strings.abbreviate(badge.info.displayName, 25)}"></span></strong></p>
-                            <p style="margin-bottom: 0px"><small><span class="text-muted" th:text="${#strings.abbreviate(badge.shortId, 30)}"></span></small></p>
+                            <p style="margin-bottom: 0px"><strong><span>{str:abbreviate(badge.info.displayName, 25)}</span></strong></p>
+                            <p style="margin-bottom: 0px"><small><span class="text-muted">{str:abbreviate(badge.shortId, 30)}</span></small></p>
                         </div>
                     </td>
                     <td class="text-right align-middle">
-                        <button class="btn btn-danger" th:onclick="@{|javascript:unlcaimModal(event, '#unclaimModal', '#unclaimModalDisplay', '#unclaimLocation', '${badge.info.displayName}', '/badges/secure/${badge.badgeId}/unclaimAction')|}">Unclaim</button>
+                        <button class="btn btn-danger" onclick="unlcaimModal(event, '#unclaimModal', '#unclaimModalDisplay', '#unclaimLocation', '{badge.info.displayName}', '/badges/secure/{badge.badgeId}/unclaimAction')">Unclaim</button>
                     </td>
                 </tr>
+                {/for}
             </tbody>
         </table>
 
@@ -60,10 +63,13 @@
             </div>
         </div>
     </div>
+    {/if}
 
-    <div th:if="${badges==null or badges.empty}">
+    {#if badges == null || badges.size < 1}
+    <div>
         <h3>You have no claimed badges</h3>
         <p>Please upload the proper firmware to your Badgy device and then connect it to wifi. See the <a href="/downloads.html">downloads</a> page for more details.</p>
     </div>
-
-</html>
+    {/if}
+    {/}
+{/include}

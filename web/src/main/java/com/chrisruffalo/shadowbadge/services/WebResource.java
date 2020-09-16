@@ -1,13 +1,10 @@
 package com.chrisruffalo.shadowbadge.services;
 
 import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
-import com.chrisruffalo.shadowbadge.services.support.ThymeLeafStreamingOutput;
-import com.chrisruffalo.shadowbadge.templates.TemplateEngineFactory;
 import com.chrisruffalo.shadowbadge.web.Constants;
+import io.quarkus.qute.TemplateInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.WebContext;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
@@ -33,50 +30,46 @@ public class WebResource {
     @Context
     private ServletContext servletContext;
 
-    private TemplateEngine engine;
+    /**
+     * Qute templates
+     */
+    private static class Templates {
+        public static native TemplateInstance index();
+        public static native TemplateInstance help();
+        public static native TemplateInstance downloads();
+    }
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PostConstruct
     public void init() {
-        // create engine with resolver
-        this.engine = TemplateEngineFactory.INSTANCE.getTemplateEngine();
     }
 
     @GET
     @Path("index.html")
     @Produces(MediaType.TEXT_HTML)
-    public Response indexHtml(
+    public TemplateInstance indexHtml(
             @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        // create context
-        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
-        context.setVariable("userid", ownerId);
-        return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/index.html", context)).build();
+        return Templates.index().data("userid", ownerId);
     }
 
     @GET
     @Path("help.html")
     @Produces(MediaType.TEXT_HTML)
-    public Response helpHtml(
+    public TemplateInstance helpHtml(
             @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        // create context
-        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
-        context.setVariable("userid", ownerId);
-        return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/help.html", context)).build();
+        return Templates.help().data("userid", ownerId);
     }
 
     @GET
     @Path("downloads.html")
     @Produces(MediaType.TEXT_HTML)
-    public Response downloadsHtml(
+    public TemplateInstance downloadsHtml(
             @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        // create context
-        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
-        context.setVariable("userid", ownerId);
-        return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/downloads.html", context)).build();
+        return Templates.downloads().data("userid", ownerId);
     }
 
     // simple health service

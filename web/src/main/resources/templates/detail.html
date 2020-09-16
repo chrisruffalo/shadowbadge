@@ -1,70 +1,69 @@
-<!DOCTYPE html>
-<html th:replace="~{templates/base.html :: base_page(~{::title}, ~{::div})}">
-
-<title>Shadowbadge :: Details</title>
-
-    <div th:if="${info != null}">
+{#include base}
+    {#title}Shadowbadge :: Details{/}
+    {#body}
+    {#if info != null}
+    <div>
         <h3>Badge Details</h3>
-        <form th:action="@{|/badges/secure/${badgeId}/updateForm|}" method="post">
+        <form action="/badges/secure/{badgeId}/updateForm" method="post">
             <div class="form-group">
                 <label for="inputDisplayName">Display Name</label>
-                <input type="text" th:value="${info.displayName}" class="form-control" id="inputDisplayName" name="displayName" aria-describedby="inputDisplayName" placeholder="My favorite badge">
+                <input type="text" value="{info.displayName}" class="form-control" id="inputDisplayName" name="displayName" aria-describedby="inputDisplayName" placeholder="My favorite badge">
                 <small id="inputDisplayNameHelp" class="form-text text-muted">This identifies the badge uniquely.</small>
             </div>
             <div class="form-group">
                 <label for="inputHeader">Badge Header</label>
-                <input type="text" maxlength="24" th:value="${info.heading}" class="form-control" id="inputHeader" name="heading" aria-describedby="inputHeader" placeholder="Shad Person">
+                <input type="text" maxlength="24" value="{info.heading}" class="form-control" id="inputHeader" name="heading" aria-describedby="inputHeader" placeholder="Shad Person">
                 <small id="inputHeaderHelp" class="form-text text-muted">This is the text header part of the badge. Suggestion: a name you call yourself. (Max 24 characters.)</small>
             </div>
             <div class="form-group">
                 <label for="badgeLayoutSelect">Layout Style</label>
-                <select class="form-control" th:field="${info.icon}" th:value="${info.icon}" id="badgeLayoutSelect" name="style">
-                    <option th:value="'ICON_RIGHT'" th:text="'Icon Right'" th:selected="${#strings.equals(info.style, 'ICON_RIGHT')}">Icon Right</option>
-                    <option th:value="'ICON_LEFT'" th:text="'Icon Left'" th:selected="${#strings.equals(info.style, 'ICON_LEFT')}">Icon Left</option>
+                <select class="form-control" id="badgeLayoutSelect" name="style">
+                    <option value="ICON_RIGHT" label="Icon Right" selected="{info.style == 'ICON_RIGHT'}">Icon Right</option>
+                    <option value="ICON_LEFT" label="Icon Left" selected="{info.style == 'ICON_LEFT'}">Icon Left</option>
                 </select>
                 <small id="badgeLayoutSelectHelp" class="form-text text-muted">The layout/style of the badge.</small>
             </div>
             <div class="form-group">
                 <label for="badgeIconSelect">Badge Icon</label>
-                <select class="form-control" th:field="${info.icon}" th:value="${info.icon}" id="badgeIconSelect" name="icon">
-                    <option th:value="'RED_HAT'" th:text="'Red Hat'" th:selected="${#strings.equals(info.icon, 'RED_HAT')}">Red Hat</option>
-                    <option th:value="'SHADOWMAN'" th:text="'Shadowman'" th:selected="${#strings.equals(info.icon, 'SHADOWMAN')}">Shadowman</option>
+                <select class="form-control" id="badgeIconSelect" name="icon">
+                    <option value="RED_HAT" label="Red Hat" selected="{info.icon == 'RED_HAT'}">Red Hat</option>
+                    <option value="SHADOWMAN" label="Shadowman" selected="{info.icon == 'SHADOWMAN'}">Shadowman</option>
                 </select>
                 <small id="badgeIconSelectHelp" class="form-text text-muted">Badge icon displayed according to selected layout.</small>
             </div>
             <div class="form-group">
                 <label for="inputRow1">Title</label>
-                <input type="text" maxlength="22" th:value="${info.title}" class="form-control" id="inputRow1" name="title" aria-describedby="inputRow1" placeholder="Senior Computer">
+                <input type="text" maxlength="22" value="{info.title}" class="form-control" id="inputRow1" name="title" aria-describedby="inputRow1" placeholder="Senior Computer">
                 <small id="inputRow1Help" class="form-text text-muted">First row on the badge. Suggestion: position or title. (Max 22 characters.)</small>
             </div>
             <div class="form-group">
                 <label for="inputRow2">Group</label>
-                <input type="text" maxlength="22" th:value="${info.group}" class="form-control" id="inputRow2" name="group" aria-describedby="inputRow2" placeholder="NAPS">
+                <input type="text" maxlength="22" value="{info.group}" class="form-control" id="inputRow2" name="group" aria-describedby="inputRow2" placeholder="NAPS">
                 <small id="inputRow2Help" class="form-text text-muted">Second row on the badge. Suggestion: group or region. (Max 22 characters.)</small>
             </div>
             <div class="form-group">
                 <label for="inputRow3">Location</label>
-                <input type="text" maxlength="22" th:value="${info.location}" class="form-control" id="inputRow3" name="location" aria-describedby="inputRow3" placeholder="Earth">
+                <input type="text" maxlength="22" value="{info.location}" class="form-control" id="inputRow3" name="location" aria-describedby="inputRow3" placeholder="Earth">
                 <small id="inputRow3Help" class="form-text text-muted">Third row on the badge. Suggestion: base of operations. (Max 22 characters.)</small>
             </div>
             <div class="form-group">
                 <label for="inputRow4">Detail</label>
-                <input type="text" maxlength="22" th:value="${info.tagline}" class="form-control" id="inputRow4" name="tagline" aria-describedby="inputRow4" placeholder="RHCA, RHCAA, RHCAAA, RHCAAAA">
+                <input type="text" maxlength="22" value="{info.tagline}" class="form-control" id="inputRow4" name="tagline" aria-describedby="inputRow4" placeholder="RHCA, RHCAA, RHCAAA, RHCAAAA">
                 <small id="inputRow4Help" class="form-text text-muted">Last row on the badge. Suggestion: honorifics, certifications, more detail. (Max 22 characters.)</small>
             </div>
             <div class="form-group">
                 <label for="qrTypeSelect">QR Code Type</label>
-                <select class="form-control" th:field="${info.qrType}" th:value="${info.icon}" id="qrTypeSelect" name="qrType" onchange="javascript:showHideCustomQr()">
-                    <option th:value="'RELATIVE'" th:text="'Shadowbadge Link'" th:selected="${#strings.equals(info.qrType, 'RELATIVE')}">Shadowbadge Link</option>
-                    <option th:value="'CUSTOM'" th:text="'Custom QR Code'" th:selected="${#strings.equals(info.qrType, 'CUSTOM')}">Custom Data</option>
-                    <option th:value="'NONE'" th:text="'No QR Code'" th:selected="${#strings.equals(info.qrType, 'NONE')}">No QR Code</option>
+                <select class="form-control" id="qrTypeSelect" name="qrType" onchange="showHideCustomQr()">
+                    <option value="RELATIVE" label="Shadowbadge Link" selected="{info.qrType == 'RELATIVE'}">Shadowbadge Link</option>
+                    <option value="CUSTOM" label="Custom QR Code" selected="{info.qrType == 'CUSTOM'}">Custom Data</option>
+                    <option value="NONE" label="No QR Code" selected="{info.qrType == 'NONE'}">No QR Code</option>
                 </select>
                 <small id="qrTypeSelectHelp" class="form-text text-muted">The type of QR code that will be shown on the badge.</small>
             </div>
-            <div id="customQrFormRow" class="form-row" th:classappend="${#strings.equals(info.qrType, 'CUSTOM')} ? noop : d-none">
+            <div id="customQrFormRow" class="form-row {info.qrType == 'CUSTOM' ? '' : 'd-none'}" >
                 <div id="customQRFormGroup" class="form-group col-lg-11 col-10">
                     <label for="inputCustomQR">Custom QR Code</label>
-                    <input id="inputCustomQR" type="text" maxlength="400" th:value="${info.qrCode}" class="form-control qrcode-text" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                    <input id="inputCustomQR" type="text" maxlength="400" value="{info.qrCode}" class="form-control qrcode-text" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
                     <small id="inputCustomQRHelp" class="form-text text-muted">Data that will be used for custom QR code on badge. (Max 400 characters.)</small>
                 </div>
                 <div class="col-lg-1 col-2">
@@ -80,12 +79,16 @@
             </div>
             <br/>
             <button type="submit" class="btn btn-primary">Submit</button>
-            <a th:href="@{|/badges/secure/badges.html|}" class="btn btn-secondary">Cancel</a>
+            <a href="/badges/secure/badges.html" class="btn btn-secondary">Cancel</a>
         </form>
         <br/><br/><br/><br/>
     </div>
+    {/if}
 
-    <div th:if="${info == null}">
+    {#if info == null}
+    <div>
         <h2>An error occurred while fetching badge details for badge. <a href="badges.html">Return to badges.</a></h2>
     </div>
-</html>
+    {/if}
+    {/}
+{/include}

@@ -3,6 +3,7 @@ package com.chrisruffalo.shadowbadge.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import io.quarkus.qute.TemplateData;
 
 import javax.persistence.Column;
 import javax.persistence.Embedded;
@@ -57,6 +58,7 @@ import java.util.List;
         }
     )
 })
+@TemplateData
 public class Badge extends BaseEntity {
 
     public static final String QUERY_GET = "Badge.get";

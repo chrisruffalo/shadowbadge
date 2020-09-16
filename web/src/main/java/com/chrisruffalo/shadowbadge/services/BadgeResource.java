@@ -3,37 +3,20 @@ package com.chrisruffalo.shadowbadge.services;
 import com.chrisruffalo.shadowbadge.dal.BadgeRepo;
 import com.chrisruffalo.shadowbadge.exceptions.RepositoryException;
 import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
-import com.chrisruffalo.shadowbadge.model.Badge;
-import com.chrisruffalo.shadowbadge.model.BadgeInfo;
-import com.chrisruffalo.shadowbadge.model.IconType;
-import com.chrisruffalo.shadowbadge.model.LayoutStyle;
-import com.chrisruffalo.shadowbadge.model.QRType;
+import com.chrisruffalo.shadowbadge.model.*;
 import com.chrisruffalo.shadowbadge.services.support.Secure;
-import com.chrisruffalo.shadowbadge.services.support.ThymeLeafStreamingOutput;
-import com.chrisruffalo.shadowbadge.templates.TemplateEngineFactory;
 import com.chrisruffalo.shadowbadge.web.Constants;
 import com.chrisruffalo.shadowbadge.web.Redirection;
+import io.quarkus.qute.TemplateInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.WebContext;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -58,19 +41,22 @@ public class BadgeResource {
     @Context
     private ServletContext servletContext;
 
-    private TemplateEngine engine;
-
     private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    /**
+     * Qute templates
+     */
+    private static class Templates {
+        public static native TemplateInstance details(BadgeInfo info);
+        public static native TemplateInstance badges(List<Badge> badges);
+    }
 
     @PostConstruct
     public void init() {
-        // create engine with resolver
-        this.engine = TemplateEngineFactory.INSTANCE.getTemplateEngine();
     }
 
     @Secure
     @PUT
-    @POST
     @Path("secure/{badgeId}/claim")
     @Produces(MediaType.APPLICATION_JSON)
     public Response claim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId, @QueryParam("secret") final String secret) throws ShadowbadgeException {
@@ -91,7 +77,7 @@ public class BadgeResource {
             return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/secure/%s/detail.html", badgeId), this.servletRequest))).build();
         } catch (ShadowbadgeException e) {
             // this is "better-ish"
-            return this.badges(ownerId, e);
+            return Response.ok(this.badges(ownerId, e)).build();
         }
     }
 
@@ -99,30 +85,28 @@ public class BadgeResource {
     @GET
     @Path("secure/badges.html")
     @Produces(MediaType.TEXT_HTML)
-    public Response badges(
+    public TemplateInstance badges(
         @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
         return this.badges(ownerId, null);
     }
 
-    private Response badges(final String ownerId, final Exception error) {
-        // create context
-        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
-        context.setVariable("userid", ownerId);
-
-        if (error != null) {
-            context.setVariable("error", true);
-            context.setVariable("errorMsg", error.getMessage());
-        } else {
-            context.setVariable("error", false);
-        }
-
+    private TemplateInstance badges(final String ownerId, final Exception error) {
         // get by owner id
         final List<Badge> list = badges.listForOwner(ownerId);
-        context.setVariable("badges", list);
+        final TemplateInstance badgeInstance = Templates.badges(list);
 
-        // return streaming response
-        return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/badges.html", context)).build();
+        if (error != null) {
+            badgeInstance.data("error", true);
+            badgeInstance.data("errorMsg", error.getMessage());
+        } else {
+            badgeInstance.data("error", false);
+        }
+
+        badgeInstance.data("userid", ownerId);
+
+        // return instance
+        return badgeInstance;
     }
 
     @GET
@@ -159,11 +143,6 @@ public class BadgeResource {
         @PathParam("badgeId") final String badgeId,
         @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        // create context
-        final WebContext context = new WebContext(this.servletRequest, this.servletResponse, this.servletContext);
-        context.setVariable("userid", ownerId);
-        context.setVariable("badgeId", badgeId);
-
         final Badge badge = badges.getByBadgeId(badgeId);
         if (null == badge) {
             return Response.noContent().build();
@@ -171,21 +150,18 @@ public class BadgeResource {
 
         // check owner id
         if (ownerId == null || !ownerId.equalsIgnoreCase(badge.getOwnerId())) {
-            return this.badges(ownerId, new ShadowbadgeException("You have no claim on the selected badge."));
+            return Response.ok(this.badges(ownerId, new ShadowbadgeException("You have no claim on the selected badge."))).build();
         }
 
         final BadgeInfo info = badge.getInfo();
-        if (null != info) {
-            context.setVariable("info", info);
-        } else {
-            context.setVariable("info", new BadgeInfo());
-        }
+        final TemplateInstance detail = Templates.details(info);
+        detail.data("userid", ownerId);
+        detail.data("badgeId", badgeId);
 
-        return Response.ok(new ThymeLeafStreamingOutput(this.engine, "templates/detail.html", context)).build();
+        return Response.ok(detail).build();
     }
 
     @Secure
-    @PUT
     @POST
     @Path("secure/{badgeId}/update")
     @Consumes(MediaType.TEXT_PLAIN)
@@ -213,7 +189,6 @@ public class BadgeResource {
     }
 
     @Secure
-    @PUT
     @POST
     @Path("secure/{badgeId}/updateForm")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)

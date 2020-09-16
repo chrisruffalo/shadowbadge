@@ -1,8 +1,5 @@
-<!DOCTYPE html>
-<html th:replace="~{templates/base.html :: base_page(~{::title}, ~{::div})}">
-
-<title>Shadowbadge</title>
-
+{#include base}
+    {#body}
 <!-- Page Content -->
 <div class="container">
     <div class="row">
@@ -17,5 +14,5 @@
         </div>
     </div>
 </div>
-
-</html>
+    {/body}
+{/include}
