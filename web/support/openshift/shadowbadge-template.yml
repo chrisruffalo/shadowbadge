@@ -119,8 +119,8 @@ objects:
           - '--listen-http=0.0.0.0:8080'
           - '--listen=0.0.0.0:8443'
           - '--verbose=true'
-          - '--client-id=gatekeeper'
-          - '--client-secret=<SECRET>'
+          - '--client-id=${KEYCLOAK_CLIENT_ID}'
+          - '--client-secret=${KEYCLOAK_CLIENT_SECRET}'
           - '--discovery-url=${KEYCLOAK_URL}/auth/realms/${KEYCLOAK_REALM}'
           - '--enable-logging=true'
           - '--tls-cert=/pki/cert.pem'
@@ -129,7 +129,7 @@ objects:
           - '--redirection-url=${EXTERNAL_URL}'
           - '--upstream-url=http://localhost:7070'
           - '--enable-refresh-tokens=true'
-          - '--encryption-key=CHANGEME'
+          - '--encryption-key=${ENCRYPTION_KEY}'
           - '--enable-default-deny=false'
           - '--resources=uri=/badges/secure/*'
           - '--resources=uri=/*|white-listed=true'
@@ -166,7 +166,7 @@ parameters:
   value: "fabric8/java-centos-openjdk8-jdk:latest"
   required: true
 - name: REPLICA_COUNT
-  value: "0"
+  value: "1"
   required: true
 - name: POSTGRES_SERVICE
   required: true
@@ -174,7 +174,6 @@ parameters:
   value: "5432"
   required: true
 - name: POSTGRES_DB
-  value: "shadowbadge"
   required: true
 - name: POSTGRES_USER
   required: true
@@ -186,9 +185,18 @@ parameters:
 - name: KEYCLOAK_REALM
   description: The name of the Keycloak realm to use.
   required: true
+- name: KEYCLOAK_CLIENT_ID
+  description: The name of the Keycloak client in the realm.
+  required: true
+- name: KEYCLOAK_CLIENT_SECRET
+  description: The credential secret for the Keycloak client.
 - name: EXTERNAL_HOSTNAME
   description: The external route hostname. This template does not configure the routes but if you are using Gatekeeper this is the best way to make Shadowbadge correctly redirect.
   value: ""
 - name: ACCOUNT_URL
   description: The url to the account service on your Keycloak server. If this value is not set the "account" link redirects to the index
   value: ""
+- name: ENCRYPTION_KEY
+  description: A key used to encrypt the value of the token exchange in Gatekeeper
+  value: "CHANGEME"
+  required: true

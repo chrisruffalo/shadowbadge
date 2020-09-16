@@ -7,6 +7,7 @@ import com.chrisruffalo.shadowbadge.model.*;
 import com.chrisruffalo.shadowbadge.services.support.Secure;
 import com.chrisruffalo.shadowbadge.web.Constants;
 import com.chrisruffalo.shadowbadge.web.Redirection;
+import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,26 +31,24 @@ public class BadgeResource {
     Redirection redirection;
 
     @Inject
-    BadgeRepo badges;
+    BadgeRepo badgeRepo;
+
+    @Inject
+    Template badges;
+
+    @Inject
+    Template detail;
 
     @Context
-    private HttpServletRequest servletRequest;
+    HttpServletRequest servletRequest;
 
     @Context
-    private HttpServletResponse servletResponse;
+    HttpServletResponse servletResponse;
 
     @Context
-    private ServletContext servletContext;
+    ServletContext servletContext;
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    /**
-     * Qute templates
-     */
-    private static class Templates {
-        public static native TemplateInstance details(BadgeInfo info);
-        public static native TemplateInstance badges(List<Badge> badges);
-    }
+    Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PostConstruct
     public void init() {
@@ -60,7 +59,7 @@ public class BadgeResource {
     @Path("secure/{badgeId}/claim")
     @Produces(MediaType.APPLICATION_JSON)
     public Response claim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId, @QueryParam("secret") final String secret) throws ShadowbadgeException {
-        return Response.ok(badges.claim(badgeId, ownerId, secret)).build();
+        return Response.ok(badgeRepo.claim(badgeId, ownerId, secret)).build();
     }
 
     @Secure
@@ -73,7 +72,7 @@ public class BadgeResource {
         @QueryParam("secret") final String secret
     ) throws ShadowbadgeException {
         try {
-            badges.claim(badgeId, ownerId, secret);
+            badgeRepo.claim(badgeId, ownerId, secret);
             return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/secure/%s/detail.html", badgeId), this.servletRequest))).build();
         } catch (ShadowbadgeException e) {
             // this is "better-ish"
@@ -93,8 +92,8 @@ public class BadgeResource {
 
     private TemplateInstance badges(final String ownerId, final Exception error) {
         // get by owner id
-        final List<Badge> list = badges.listForOwner(ownerId);
-        final TemplateInstance badgeInstance = Templates.badges(list);
+        final List<Badge> list = badgeRepo.listForOwner(ownerId);
+        final TemplateInstance badgeInstance = this.badges.data("badges", list);
 
         if (error != null) {
             badgeInstance.data("error", true);
@@ -116,7 +115,7 @@ public class BadgeResource {
         @PathParam("badgeId") final String badgeId,
         @HeaderParam(Constants.X_SHADOWBADGE_SECRET) final String secret
     ) throws ShadowbadgeException {
-        final Badge badge = badges.getByBadgeId(badgeId);
+        final Badge badge = badgeRepo.getByBadgeId(badgeId);
         if (badge == null) {
             this.logger.info("no badge for badge='{}'", badgeId);
             return Response.noContent().build();
@@ -143,7 +142,7 @@ public class BadgeResource {
         @PathParam("badgeId") final String badgeId,
         @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        final Badge badge = badges.getByBadgeId(badgeId);
+        final Badge badge = badgeRepo.getByBadgeId(badgeId);
         if (null == badge) {
             return Response.noContent().build();
         }
@@ -154,9 +153,10 @@ public class BadgeResource {
         }
 
         final BadgeInfo info = badge.getInfo();
-        final TemplateInstance detail = Templates.details(info);
-        detail.data("userid", ownerId);
-        detail.data("badgeId", badgeId);
+        final TemplateInstance detail = this.detail
+            .data("info", info)
+            .data("userid", ownerId)
+            .data("badgeId", badgeId);
 
         return Response.ok(detail).build();
     }
@@ -167,7 +167,7 @@ public class BadgeResource {
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId, final BadgeInfo newInfo) throws ShadowbadgeException {
-        return Response.ok(badges.updateInfo(badgeId, ownerId, newInfo)).build();
+        return Response.ok(badgeRepo.updateInfo(badgeId, ownerId, newInfo)).build();
     }
 
     @Secure
@@ -175,7 +175,7 @@ public class BadgeResource {
     @Path("secure/{badgeId}/unclaim")
     @Produces(MediaType.TEXT_PLAIN)
     public Response unclaim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
-        this.badges.unclaim(badgeId, ownerId);
+        this.badgeRepo.unclaim(badgeId, ownerId);
         return Response.ok("badge claim removed").build();
     }
 
@@ -183,7 +183,7 @@ public class BadgeResource {
     @GET
     @Path("secure/{badgeId}/unclaimAction")
     public Response unclaimAction(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
-        this.badges.unclaim(badgeId, ownerId);
+        this.badgeRepo.unclaim(badgeId, ownerId);
         // if all goes ok, return home
         return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/badges.html", this.servletRequest))).build();
     }
@@ -207,7 +207,7 @@ public class BadgeResource {
         @FormParam("customQrCode") final String customQrCode
     ) throws RepositoryException {
         // get badge so we can get short id and calculate url if needed
-        Badge badge = badges.getByBadgeId(badgeId);
+        Badge badge = badgeRepo.getByBadgeId(badgeId);
 
         // get info from badge
         BadgeInfo info = badge.getInfo();
@@ -254,7 +254,7 @@ public class BadgeResource {
         }
 
         // update info
-        badges.updateInfo(badgeId, ownerId, info);
+        badgeRepo.updateInfo(badgeId, ownerId, info);
 
         // if all goes ok, return to badges page
         return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/badges.html", this.servletRequest))).build();

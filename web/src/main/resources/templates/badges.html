@@ -14,7 +14,7 @@
     </div>
     {/if}
 
-    {#if badges != null && badges.size > 0}
+    {#if util:hasContents(badges)}
     <div>
         <table class="table shadowbadge-table-hover">
            <thead>
@@ -65,7 +65,7 @@
     </div>
     {/if}
 
-    {#if badges == null || badges.size < 1}
+    {#if !util:hasContents(badges)}
     <div>
         <h3>You have no claimed badges</h3>
         <p>Please upload the proper firmware to your Badgy device and then connect it to wifi. See the <a href="/downloads.html">downloads</a> page for more details.</p>

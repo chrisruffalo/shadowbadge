@@ -2,11 +2,13 @@ package com.chrisruffalo.shadowbadge.services;
 
 import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
 import com.chrisruffalo.shadowbadge.web.Constants;
+import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -22,22 +24,22 @@ import javax.ws.rs.core.Response;
 public class WebResource {
 
     @Context
-    private HttpServletRequest servletRequest;
+    HttpServletRequest servletRequest;
 
     @Context
-    private HttpServletResponse servletResponse;
+    HttpServletResponse servletResponse;
 
     @Context
-    private ServletContext servletContext;
+    ServletContext servletContext;
 
-    /**
-     * Qute templates
-     */
-    private static class Templates {
-        public static native TemplateInstance index();
-        public static native TemplateInstance help();
-        public static native TemplateInstance downloads();
-    }
+    @Inject
+    Template index;
+
+    @Inject
+    Template help;
+
+    @Inject
+    Template downloads;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -51,7 +53,7 @@ public class WebResource {
     public TemplateInstance indexHtml(
             @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        return Templates.index().data("userid", ownerId);
+        return this.index.data("userid", ownerId);
     }
 
     @GET
@@ -60,7 +62,7 @@ public class WebResource {
     public TemplateInstance helpHtml(
             @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        return Templates.help().data("userid", ownerId);
+        return this.help.data("userid", ownerId);
     }
 
     @GET
@@ -69,7 +71,7 @@ public class WebResource {
     public TemplateInstance downloadsHtml(
             @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
     ) throws ShadowbadgeException {
-        return Templates.downloads().data("userid", ownerId);
+        return this.downloads.data("userid", ownerId);
     }
 
     // simple health service

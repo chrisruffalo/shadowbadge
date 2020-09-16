@@ -18,9 +18,11 @@ import java.io.IOException;
 )
 public class AccountServlet implements Servlet {
 
+    private static final String UNCONFIGURED = "shadowbadge.account.url.unconfigured";
+
     private static final String INDEX = "/index.html";
 
-    @ConfigProperty(name = "shadowbadge.account.url", defaultValue = "")
+    @ConfigProperty(name = "shadowbadge.account.url", defaultValue = UNCONFIGURED)
     String authUrl;
 
     @Inject
@@ -40,7 +42,7 @@ public class AccountServlet implements Servlet {
     public void service(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
         if (servletResponse instanceof HttpServletResponse ) {
             final HttpServletResponse response = (HttpServletResponse)servletResponse;
-            if (!authUrl.isEmpty()) {
+            if (!authUrl.isEmpty() && !UNCONFIGURED.equals(authUrl)) {
                 response.sendRedirect(response.encodeRedirectURL(authUrl));
             } else {
                 response.sendRedirect(response.encodeRedirectURL(this.redirection.getRedirect(INDEX, servletRequest)));

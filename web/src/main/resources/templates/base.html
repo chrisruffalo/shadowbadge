@@ -27,7 +27,7 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/downloads.html">Downloads</a>
                 </li>
-                <li class="nav-item logged-out {userid ? '' : 'd-none'}">
+                <li class="nav-item logged-out {userid ? 'd-none' : ''}">
                     <a class="nav-link" href="/badges/secure/badges.html">Login</a>
                 </li>
                 <li class="nav-item logged-in {userid ? '' : 'd-none'}">
@@ -64,8 +64,8 @@
 <!-- shadowbadge logic -->
 <script src="/js/shadowbadge.js"></script>
 
-<!-- alternate way to validate login if no userid is available -->
 {#if !userid}
+<!-- alternate way to validate login if no userid is available -->
 <script>
     axios.get('/badges/secure/badges.html')
         .then((response) => {
