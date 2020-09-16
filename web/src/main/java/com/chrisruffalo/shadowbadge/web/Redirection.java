@@ -8,7 +8,7 @@ import javax.servlet.ServletRequest;
 @Singleton
 public class Redirection {
 
-    @ConfigProperty(name = "shadowbadge.external.url", defaultValue = "")
+    @ConfigProperty(name = "shadowbadge.external.url", defaultValue = "http://localhost:8081")
     String externalUrl;
 
     public String getRedirect(final String to, ServletRequest request) {
