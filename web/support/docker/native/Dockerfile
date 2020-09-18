@@ -20,4 +20,4 @@ COPY *-runner /work/application
 RUN chmod 775 /work \
     && chmod +x /work/application
 EXPOSE 8080
-CMD ["/work/application", "-Dquarkus.http.host=0.0.0.0"]
+CMD ["/work/application", "-Dquarkus.http.host=0.0.0.0", "-Dshadowbadge.external.url=${SHADOWBADGE_EXTERNAL_URL}"]

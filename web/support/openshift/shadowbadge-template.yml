@@ -1,32 +1,47 @@
 apiVersion: v1
 kind: Template
-metdata:
+metadata:
   name: shadowbadge-template
 objects:
 # image stream target for maven builds
 - apiVersion: image.openshift.io/v1
   kind: ImageStream
   metadata:
-    name: is-shadowbadge-ui-${OUTPUT_TYPE}
+    name: "is-shadowbadge-ui-${OUTPUT_TYPE}"
     labels:
-      app: shadowbadge-ui-${OUTPUT_TYPE}
+      app: "shadowbadge-ui-${OUTPUT_TYPE}"
     spec:
       lookupPolicy:
         local: false
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: "gatekeeper"
+    labels:
+      app: "shadowbadge"
+    spec:
+      tags:
+      - from:
+          kind: DockerImage
+          name: docker.io/keycloak/keycloak-gatekeeper:latest
 # build config target for maven builds
 - apiVersion: build.openshift.io/v1
   kind: BuildConfig
   metadata:
-    name: bc-shadowbadge-ui-${OUTPUT_TYPE}
+    name: "bc-shadowbadge-ui-${OUTPUT_TYPE}"
     labels:
-      app: shadowbadge-ui-${OUTPUT_TYPE}
+      app: "shadowbadge-ui-${OUTPUT_TYPE}"
   spec:
     output:
       to:
         kind: ImageStreamTag
-        name: is-shadowbadge-ui-${OUTPUT_TYPE}:latest
+        name: "is-shadowbadge-ui-${OUTPUT_TYPE}:latest"
     postCommit: {}
-    resources: {}
+    resources:
+      limits:
+        memory: 128Mi
+      requests:
+        memory: 256Mi
     runPolicy: SerialLatestOnly
     source:
       binary: {}
@@ -42,9 +57,14 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: service-shadowbadge-ui-${OUTPUT_TYPE}
+    name: "service-shadowbadge-ui-${OUTPUT_TYPE}"
     labels:
       app: shadowbadge-ui-${OUTPUT_TYPE}
+    annotations:
+      # in openshift 4 create a tls.key/tls.crt in the given secret for default consumption by gatekeeper
+      "service.beta.openshift.io/serving-cert-secret-name": app-shadowbadge-certs
+      # in openshift 3 create a tls.key/tls.crt in the given secret for default consumption by gatekeeper
+      "service.alpha.openshift.io/serving-cert-secret-name": app-shadowbadge-certs
   spec:
     ports:
     - name: 8080-tcp
@@ -59,7 +79,7 @@ objects:
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
-    name: dc-shadowbadge-ui-${OUTPUT_TYPE}
+    name: "dc-shadowbadge-ui-${OUTPUT_TYPE}"
     labels:
       app: shadowbadge-ui-${OUTPUT_TYPE}
       type: ${OUTPUT_TYPE}
@@ -72,6 +92,7 @@ objects:
       type: Rolling
     template:
       metadata:
+        name: "shadowbadge-ui-${OUTPUT_TYPE}"
         labels:
           app: shadowbadge-ui-${OUTPUT_TYPE}
           deploymentConfig: dc-shadowbadge-ui-${OUTPUT_TYPE}
@@ -79,7 +100,7 @@ objects:
         containers:
         # shadowbadge application container
         - name: shadowbadge-ui-${OUTPUT_TYPE}
-          image: "image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/is-shadowbadge-ui-${OUTPUT_TYPE}"
+          image: "is-shadowbadge-ui-${OUTPUT_TYPE}:latest"
           imagePullPolicy: Always
           # override quarkus environment variables to connect to postgres
           env:
@@ -93,15 +114,36 @@ objects:
             value: "https://${EXTERNAL_HOSTNAME}"
           - name: SHADOWBADGE_ACCOUNT_URL
             value: "${ACCOUNT_URL}"
+          - name: SHADOWBADGE_KEYCLOAK_URL
+            value: "${KEYCLOAK_URL}"
+          - name: SHADOWBADGE_KEYCLOAK_REALM
+            value: "${KEYCLOAK_REALM}"
           - name: QUARKUS_HTTP_PORT
-            value: 7070
+            value: "7070"
+          - name: QUARKUS_HTTPS_PORT
+            value: "7443"
+          - name: QUARKUS_HTTP_SSL_CERTIFICATE_FILE
+            value: "/pki/tls.crt"
+          - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_FILE
+            value: "/pki/tls.key"
           ports:
           - containerPort: 7070
             protocol: TCP
+          - containerPort: 7443
+            protocol: TCP
+          resources:
+            limits:
+              memory: "${MEMORY_LIMIT}"
+            requests:
+              memory: "256Mi"
+          volumeMounts:
+          - name: app-shadowbadge-certs-volume
+            mountPath: /pki/
           dnsPolicy: ClusterFirst
           restartPolicy: Always
         # gatekeeper authentication sidecar
         - name: gatekeeper
+          image: 'gatekeeper:latest'
           ports:
           - containerPort: 8443
             protocol: TCP
@@ -113,7 +155,6 @@ objects:
             mountPath: /pki/
           terminationMessagePolicy: File
           terminationMessagePath: /dev/termination-log
-          image: 'image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/gatekeeper'
           args:
           # insanely helpful reference: https://github.com/keycloak/keycloak-gatekeeper/blob/master/doc.go
           - '--listen-http=0.0.0.0:8080'
@@ -123,11 +164,11 @@ objects:
           - '--client-secret=${KEYCLOAK_CLIENT_SECRET}'
           - '--discovery-url=${KEYCLOAK_URL}/auth/realms/${KEYCLOAK_REALM}'
           - '--enable-logging=true'
-          - '--tls-cert=/pki/cert.pem'
-          - '--tls-private-key=/pki/key.pem'
-          - '--tls-ca-certificate=/pki/ca.pem'
-          - '--redirection-url=${EXTERNAL_URL}'
-          - '--upstream-url=http://localhost:7070'
+          - '--tls-cert=/pki/tls.crt'
+          - '--tls-private-key=/pki/tls.key'
+          - '--redirection-url=https://${EXTERNAL_HOSTNAME}'
+          - '--upstream-url=https://localhost:7443'
+          - '--skip-upstream-tls-verify=true'
           - '--enable-refresh-tokens=true'
           - '--encryption-key=${ENCRYPTION_KEY}'
           - '--enable-default-deny=false'
@@ -139,11 +180,15 @@ objects:
           - '--cors-origins=${EXTERNAL_HOSTNAME},${KEYCLOAK_URL}'
           - '--enable-logout-redirect=true'
           - '--enable-https-redirection=true'
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              memory: 128Mi
         volumes:
         - name: app-shadowbadge-certs-volume
-          configMap:
-            name: app-shadowbadge-certs
-            defaultMode: 420
+          secret:
+            secretName: ${CERTIFICATE_SECRET_NAME}
         triggers:
         - type: ImageChange
           imageChangeParams:
@@ -197,6 +242,13 @@ parameters:
   description: The url to the account service on your Keycloak server. If this value is not set the "account" link redirects to the index
   value: ""
 - name: ENCRYPTION_KEY
-  description: A key used to encrypt the value of the token exchange in Gatekeeper
-  value: "CHANGEME"
+  description: A key used to encrypt the value of the token exchange in Gatekeeper. Must be 16 or 32 characters. (Will be generated if left blank.)
+  from: '[a-zA-Z0-9]{32}'
+  generate: expression
   required: true
+- name: CERTIFICATE_SECRET_NAME
+  description: A certificate secret name where the secret has a 'tls.key' and 'tls.crt' file for use by Gatekeeper. By default uses the certificates created by the shadowbadge-ui service.
+  value: "app-shadowbadge-certs"
+- name: MEMORY_LIMIT
+  description: The upper memory limit of the Shadowbadge UI Pod
+  value: "512Mi"
