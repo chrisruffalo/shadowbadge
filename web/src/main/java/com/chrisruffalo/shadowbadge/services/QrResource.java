@@ -1,7 +1,7 @@
 package com.chrisruffalo.shadowbadge.services;
 
 import com.chrisruffalo.shadowbadge.qr.QrDetectorService;
-import com.chrisruffalo.shadowbadge.services.support.Secure;
+import io.quarkus.security.Authenticated;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.slf4j.Logger;
@@ -10,11 +10,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.awt.image.BufferedImage;
@@ -26,9 +22,6 @@ import java.util.concurrent.CompletionStage;
 
 @Path("/qr")
 public class QrResource {
-    private static int PEEK_LIMIT = 100;
-    private static int LOG_URL_LEN = 20;
-
     @Inject
     QrDetectorService detector;
 
@@ -42,7 +35,7 @@ public class QrResource {
     }
 
     // this is secure for no other reason than to prevent over-use
-    @Secure
+    @Authenticated
     @POST
     @Path("detect")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -88,13 +81,4 @@ public class QrResource {
             }
         });
     }
-
-    private static long parse(String value, long defaultVal) {
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            return defaultVal;
-        }
-    }
-
 }
