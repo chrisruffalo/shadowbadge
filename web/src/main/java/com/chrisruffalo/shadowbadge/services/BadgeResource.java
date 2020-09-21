@@ -48,9 +48,6 @@ public class BadgeResource extends BaseResource {
     @Context
     HttpServletResponse servletResponse;
 
-    @Context
-    ServletContext servletContext;
-
     Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PostConstruct

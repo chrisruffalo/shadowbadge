@@ -21,15 +21,6 @@ import javax.ws.rs.core.SecurityContext;
 
 @Path("/")
 public class WebResource extends BaseResource {
-    @Context
-    HttpServletRequest servletRequest;
-
-    @Context
-    HttpServletResponse servletResponse;
-
-    @Context
-    ServletContext servletContext;
-
     @Inject
     Template index;
 
