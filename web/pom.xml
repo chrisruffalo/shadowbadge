@@ -280,10 +280,7 @@
                 </goals>
                 <configuration>
                   <enableHttpUrlHandler>true</enableHttpUrlHandler>
-                  <additionalBuildArgs>
-                    <additionalBuildArg>-H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json</additionalBuildArg>
-                    <additionalBuildArg>-H:Log=registerResource</additionalBuildArg>
-                  </additionalBuildArgs>
+                  <additionalBuildArgs/>
                 </configuration>
               </execution>
             </executions>

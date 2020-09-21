@@ -22,18 +22,6 @@ objects:
     spec:
       lookupPolicy:
         local: false
-- apiVersion: image.openshift.io/v1
-  kind: ImageStream
-  metadata:
-    name: "kouketo-proxy"
-    labels:
-      app: "shadowbadge-app"
-    spec:
-      tags:
-      - name: latest
-        from:
-          kind: DockerImage
-          name: quay.io/louketo/louketo-proxy:latest
 # build config target for maven builds
 - apiVersion: build.openshift.io/v1
   kind: BuildConfig
@@ -99,9 +87,9 @@ objects:
     labels:
       app: shadowbadge-app
     annotations:
-      # in openshift 4 create a tls.key/tls.crt in the given secret for default consumption by gatekeeper
+      # in openshift 4 create a tls.key/tls.crt in the given secret for default consumption
       "service.beta.openshift.io/serving-cert-secret-name": shadowbadge-certs
-      # in openshift 3 create a tls.key/tls.crt in the given secret for default consumption by gatekeeper
+      # in openshift 3 create a tls.key/tls.crt in the given secret for default consumption
       "service.alpha.openshift.io/serving-cert-secret-name": shadowbadge-certs
   spec:
     ports:
@@ -153,24 +141,24 @@ objects:
             value: "${POSTGRES_PASSWORD}"
           - name: SHADOWBADGE_EXTERNAL_URL
             value: "https://${EXTERNAL_HOST}"
-          - name: SHADOWBADGE_ACCOUNT_URL
-            value: "https://${KEYCLOAK_HOST}/auth/realms/${KEYCLOAK_REALM}/account"
-          - name: SHADOWBADGE_KEYCLOAK_URL
-            value: "https://${KEYCLOAK_HOST}"
-          - name: SHADOWBADGE_KEYCLOAK_REALM
-            value: "${KEYCLOAK_REALM}"
+          - name: KEYCLOAK_SERVER_URL
+            value: "https://${KEYCLOAK_HOST}/auth/realms/${KEYCLOAK_REALM}"
+          - name: KEYCLOAK_CLIENT_ID
+            value: "${KEYCLOAK_CLIENT_ID}"
+          - name: KEYCLOAK_CLIENT_SECRET
+            value: "${KEYCLOAK_CLIENT_SECRET}"
           - name: QUARKUS_HTTP_PORT
-            value: "7070"
+            value: "8080"
           - name: QUARKUS_HTTP_SSL_PORT
-            value: "7443"
+            value: "8443"
           - name: QUARKUS_HTTP_SSL_CERTIFICATE_FILE
             value: "/pki/tls.crt"
           - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_FILE
             value: "/pki/tls.key"
           ports:
-          - containerPort: 7070
+          - containerPort: 8080
             protocol: TCP
-          - containerPort: 7443
+          - containerPort: 8443
             protocol: TCP
           livenessProbe:
             failureThreshold: 3
@@ -201,48 +189,6 @@ objects:
             readOnly: true
           dnsPolicy: ClusterFirst
           restartPolicy: Always
-        # gatekeeper authentication sidecar
-        - name: gatekeeper
-          image: 'louketo-proxy:latest'
-          ports:
-          - containerPort: 8443
-            protocol: TCP
-          - containerPort: 8080
-            protocol: TCP
-          imagePullPolicy: Always
-          volumeMounts:
-          - name: shadowbadge-certs-volume
-            mountPath: /pki/
-            readOnly: true
-          terminationMessagePolicy: File
-          terminationMessagePath: /dev/termination-log
-          args:
-          # insanely helpful reference: https://github.com/louketo/louketo-proxy/blob/master/doc.go
-          - '--listen-http=0.0.0.0:8080'
-          - '--listen=0.0.0.0:8443'
-          - '--verbose=true'
-          - '--client-id=${KEYCLOAK_CLIENT_ID}'
-          - '--client-secret=${KEYCLOAK_CLIENT_SECRET}'
-          - '--discovery-url=https://${KEYCLOAK_HOST}/auth/realms/${KEYCLOAK_REALM}'
-          - '--skip-openid-provider-tls-verify=${SKIP_KEYCLOAK_VERIFY}'
-          - '--enable-logging=true'
-          - '--tls-cert=/pki/tls.crt'
-          - '--tls-private-key=/pki/tls.key'
-          - '--redirection-url=https://${EXTERNAL_HOST}'
-          - '--upstream-url=https://localhost:7443'
-          - '--skip-upstream-tls-verify=true'
-          - '--enable-refresh-tokens=true'
-          - '--encryption-key=${ENCRYPTION_KEY}'
-          - '--enable-default-deny=false'
-          - '--resources=uri=/badges/secure/*'
-          - '--resources=uri=/*|white-listed=true'
-          - '--preserve-host=true'
-          - '--hostnames=${EXTERNAL_HOST}'
-          resources:
-            limits:
-              memory: 128Mi
-            requests:
-              memory: 128Mi
         volumes:
         - name: shadowbadge-certs-volume
           secret:
@@ -256,14 +202,6 @@ objects:
             from:
               kind: ImageStreamTag
               name: shadowbadge-app-${IMAGE_TYPE}:latest
-        - type: ImageChange
-          imageChangeParams:
-            automatic: false
-            containerNames:
-              - gatekeeper
-            from:
-              kind: ImageStreamTag
-              name: louketo-proxy:latest
         - type: ConfigChange
 parameters:
 - name: IMAGE_TYPE
@@ -305,9 +243,6 @@ parameters:
   required: true
 - name: KEYCLOAK_CLIENT_SECRET
   description: The credential secret for the Keycloak client.
-- name: SKIP_KEYCLOAK_VERIFY
-  description: Skip verifying the Keycloak/SSO provider. Should be "true" (default) or "false".
-  value: "true"
   required: true
 - name: EXTERNAL_HOST
   description: The external route hostname. This template does not configure the routes but if you are using Gatekeeper this is the best way to make Shadowbadge correctly redirect.
