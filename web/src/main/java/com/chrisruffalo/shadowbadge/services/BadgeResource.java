@@ -4,17 +4,17 @@ import com.chrisruffalo.shadowbadge.dal.BadgeRepo;
 import com.chrisruffalo.shadowbadge.exceptions.RepositoryException;
 import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
 import com.chrisruffalo.shadowbadge.model.*;
-import com.chrisruffalo.shadowbadge.services.support.Secure;
 import com.chrisruffalo.shadowbadge.web.Constants;
 import com.chrisruffalo.shadowbadge.web.Redirection;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.security.Authenticated;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
@@ -25,8 +25,7 @@ import java.net.URI;
 import java.util.List;
 
 @Path("/badges")
-public class BadgeResource {
-
+public class BadgeResource extends BaseResource {
     @Inject
     Redirection redirection;
 
@@ -34,7 +33,7 @@ public class BadgeResource {
     BadgeRepo badgeRepo;
 
     @Inject
-    Template badges;
+    Template list;
 
     @Inject
     Template detail;
@@ -45,55 +44,55 @@ public class BadgeResource {
     @Context
     HttpServletResponse servletResponse;
 
-    @Context
-    ServletContext servletContext;
-
     Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PostConstruct
     public void init() {
     }
 
-    @Secure
+    @Authenticated
     @PUT
-    @Path("secure/{badgeId}/claim")
+    @Path("{badgeId}/claim")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response claim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId, @QueryParam("secret") final String secret) throws ShadowbadgeException {
-        return Response.ok(badgeRepo.claim(badgeId, ownerId, secret)).build();
+    public Response claim(@PathParam("badgeId") final String badgeId, @QueryParam("secret") final String secret) throws ShadowbadgeException {
+        return Response.ok(badgeRepo.claim(badgeId, this.getCurrentUserId(), secret)).build();
     }
 
-    @Secure
-    @GET // semantically dubious
-    @Path("secure/{badgeId}/claimAction")
+    // semantically dubious but since this is the link that is created from the QR code there's no way to tell the browser to
+    // do a post unless we redirect to a static page that serves javascript and then does a post and then something else
+    // which is all a bit of a rube goldberg machine to do the exact same thing that we find semantically dubious here so in
+    // my estimation the reduced complexity pays off
+    @Authenticated
+    @GET
+    @Path("{badgeId}/claimAction")
     @Produces(MediaType.TEXT_HTML)
     public Response claimAction(
         @PathParam("badgeId") final String badgeId,
-        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId,
         @QueryParam("secret") final String secret
     ) throws ShadowbadgeException {
+        final String userId = this.getCurrentUserId();
         try {
-            badgeRepo.claim(badgeId, ownerId, secret);
-            return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/secure/%s/detail.html", badgeId), this.servletRequest))).build();
+            badgeRepo.claim(badgeId, userId, secret);
+            return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/%s/detail.html", badgeId), this.servletRequest))).build();
         } catch (ShadowbadgeException e) {
             // this is "better-ish"
-            return Response.ok(this.badges(ownerId, e)).build();
+            return Response.ok(this.badges(userId, e)).build();
         }
     }
 
-    @Secure
+    @Authenticated
     @GET
-    @Path("secure/badges.html")
+    @Path("list.html")
     @Produces(MediaType.TEXT_HTML)
-    public TemplateInstance badges(
-        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
-    ) throws ShadowbadgeException {
-        return this.badges(ownerId, null);
+    @NoCache
+    public TemplateInstance badges() throws ShadowbadgeException {
+        return this.badges(this.getCurrentUserId(), null);
     }
 
-    private TemplateInstance badges(final String ownerId, final Exception error) {
+    private TemplateInstance badges(final String userId, final Exception error) {
         // get by owner id
-        final List<Badge> list = badgeRepo.listForOwner(ownerId);
-        final TemplateInstance badgeInstance = this.badges.data("badges", list);
+        final List<Badge> list = badgeRepo.listForOwner(userId);
+        final TemplateInstance badgeInstance = this.list.data("badges", list);
 
         if (error != null) {
             badgeInstance.data("error", true);
@@ -102,7 +101,7 @@ public class BadgeResource {
             badgeInstance.data("error", false);
         }
 
-        badgeInstance.data("userid", ownerId);
+        badgeInstance.data("identity", this.getIdentity());
 
         // return instance
         return badgeInstance;
@@ -134,13 +133,12 @@ public class BadgeResource {
         return Response.ok(badge).build();
     }
 
-    @Secure
+    @Authenticated
     @GET
-    @Path("secure/{badgeId}/detail.html")
+    @Path("{badgeId}/detail.html")
     @Produces(MediaType.TEXT_HTML)
     public Response detailHtml(
-        @PathParam("badgeId") final String badgeId,
-        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId
+        @PathParam("badgeId") final String badgeId
     ) throws ShadowbadgeException {
         final Badge badge = badgeRepo.getByBadgeId(badgeId);
         if (null == badge) {
@@ -148,53 +146,53 @@ public class BadgeResource {
         }
 
         // check owner id
-        if (ownerId == null || !ownerId.equalsIgnoreCase(badge.getOwnerId())) {
-            return Response.ok(this.badges(ownerId, new ShadowbadgeException("You have no claim on the selected badge."))).build();
+        final String userId = this.getCurrentUserId();
+        if (userId == null || !userId.equalsIgnoreCase(badge.getOwnerId())) {
+            return Response.ok(this.badges(userId, new ShadowbadgeException("You have no claim on the selected badge."))).build();
         }
 
         final BadgeInfo info = badge.getInfo();
         final TemplateInstance detail = this.detail
             .data("info", info)
-            .data("userid", ownerId)
+            .data("identity", this.getIdentity())
             .data("badgeId", badgeId);
 
         return Response.ok(detail).build();
     }
 
-    @Secure
+    @Authenticated
     @POST
-    @Path("secure/{badgeId}/update")
+    @Path("{badgeId}/update")
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId, final BadgeInfo newInfo) throws ShadowbadgeException {
+    public Response update(@PathParam("badgeId") final String badgeId, final String ownerId, final BadgeInfo newInfo) throws ShadowbadgeException {
         return Response.ok(badgeRepo.updateInfo(badgeId, ownerId, newInfo)).build();
     }
 
-    @Secure
+    @Authenticated
     @DELETE
-    @Path("secure/{badgeId}/unclaim")
+    @Path("{badgeId}/unclaim")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response unclaim(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
-        this.badgeRepo.unclaim(badgeId, ownerId);
+    public Response unclaim(@PathParam("badgeId") final String badgeId) throws ShadowbadgeException {
+        this.badgeRepo.unclaim(badgeId, this.getCurrentUserId());
         return Response.ok("badge claim removed").build();
     }
 
-    @Secure
+    @Authenticated
     @GET
-    @Path("secure/{badgeId}/unclaimAction")
-    public Response unclaimAction(@PathParam("badgeId") final String badgeId, @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId) throws ShadowbadgeException {
-        this.badgeRepo.unclaim(badgeId, ownerId);
+    @Path("{badgeId}/unclaimAction")
+    public Response unclaimAction(@PathParam("badgeId") final String badgeId) throws ShadowbadgeException {
+        this.badgeRepo.unclaim(badgeId, this.getCurrentUserId());
         // if all goes ok, return home
-        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/badges.html", this.servletRequest))).build();
+        return Response.seeOther(URI.create(redirection.getRedirect("/badges/list.html", this.servletRequest))).build();
     }
 
-    @Secure
+    @Authenticated
     @POST
-    @Path("secure/{badgeId}/updateForm")
+    @Path("{badgeId}/updateForm")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response updateForm(
         @PathParam("badgeId") final String badgeId,
-        @HeaderParam(Constants.X_AUTH_SUBJECT) final String ownerId,
         @FormParam("displayName") final String displayName,
         @FormParam("heading") final String heading,
         @FormParam("title") final String title,
@@ -254,9 +252,9 @@ public class BadgeResource {
         }
 
         // update info
-        badgeRepo.updateInfo(badgeId, ownerId, info);
+        badgeRepo.updateInfo(badgeId, this.getCurrentUserId(), info);
 
         // if all goes ok, return to badges page
-        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/badges.html", this.servletRequest))).build();
+        return Response.seeOther(URI.create(redirection.getRedirect("/badges/list.html", this.servletRequest))).build();
     }
 }

@@ -10,4 +10,8 @@ public class TemplateStrings {
         return StringUtils.abbreviate(input, toLength);
     }
 
+    public static boolean isEmpty(final String input) {
+        return input == null || input.isEmpty();
+    }
+
 }

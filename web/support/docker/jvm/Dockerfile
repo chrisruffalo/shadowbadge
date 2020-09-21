@@ -14,7 +14,7 @@
 # docker run -i --rm -p 8080:8080 quarkus/shadowbadge-jvm
 #
 ###
-FROM fabric8/java-centos-openjdk8-jdk
+FROM fabric8/java-centos-openjdk11-jdk
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 ENV AB_ENABLED=jmx_exporter
 COPY lib/* /deployments/lib/
@@ -25,4 +25,4 @@ USER root
 RUN chown -R jboss /deployments
 USER jboss
 
-ENTRYPOINT [ "/deployments/run-java.sh" ]
+CMD [ "/deployments/run-java.sh" ]
