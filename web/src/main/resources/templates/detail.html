@@ -4,7 +4,7 @@
     {#if info}
     <div>
         <h3>Badge Details</h3>
-        <form action="/badges/secure/{badgeId}/updateForm" method="post">
+        <form action="/badges/{badgeId}/updateForm" method="post">
             <div class="form-group">
                 <label for="inputDisplayName">Display Name</label>
                 <input type="text" value="{info.displayName}" class="form-control" id="inputDisplayName" name="displayName" aria-describedby="inputDisplayName" placeholder="My favorite badge">
@@ -79,7 +79,7 @@
             </div>
             <br/>
             <button type="submit" class="btn btn-primary">Submit</button>
-            <a href="/badges/secure/badges.html" class="btn btn-secondary">Cancel</a>
+            <a href="/badges/list.html" class="btn btn-secondary">Cancel</a>
         </form>
         <br/><br/><br/><br/>
     </div>
@@ -87,7 +87,7 @@
 
     {#if !info}
     <div>
-        <h2>An error occurred while fetching badge details for badge. <a href="badges.html">Return to badges.</a></h2>
+        <h2>An error occurred while fetching badge details for badge. <a href="list.html">Return to badges.</a></h2>
     </div>
     {/if}
     {/}

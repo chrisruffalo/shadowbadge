@@ -21,6 +21,7 @@ import javax.ws.rs.core.SecurityContext;
 
 @Path("/")
 public class WebResource extends BaseResource {
+
     @Inject
     Template index;
 

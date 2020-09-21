@@ -6,19 +6,15 @@ import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
 import com.chrisruffalo.shadowbadge.model.*;
 import com.chrisruffalo.shadowbadge.web.Constants;
 import com.chrisruffalo.shadowbadge.web.Redirection;
-import io.quarkus.oidc.IdToken;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.security.Authenticated;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
@@ -37,7 +33,7 @@ public class BadgeResource extends BaseResource {
     BadgeRepo badgeRepo;
 
     @Inject
-    Template badges;
+    Template list;
 
     @Inject
     Template detail;
@@ -56,7 +52,7 @@ public class BadgeResource extends BaseResource {
 
     @Authenticated
     @PUT
-    @Path("secure/{badgeId}/claim")
+    @Path("{badgeId}/claim")
     @Produces(MediaType.APPLICATION_JSON)
     public Response claim(@PathParam("badgeId") final String badgeId, @QueryParam("secret") final String secret) throws ShadowbadgeException {
         return Response.ok(badgeRepo.claim(badgeId, this.getCurrentUserId(), secret)).build();
@@ -68,7 +64,7 @@ public class BadgeResource extends BaseResource {
     // my estimation the reduced complexity pays off
     @Authenticated
     @GET
-    @Path("secure/{badgeId}/claimAction")
+    @Path("{badgeId}/claimAction")
     @Produces(MediaType.TEXT_HTML)
     public Response claimAction(
         @PathParam("badgeId") final String badgeId,
@@ -77,7 +73,7 @@ public class BadgeResource extends BaseResource {
         final String userId = this.getCurrentUserId();
         try {
             badgeRepo.claim(badgeId, userId, secret);
-            return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/secure/%s/detail.html", badgeId), this.servletRequest))).build();
+            return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/%s/detail.html", badgeId), this.servletRequest))).build();
         } catch (ShadowbadgeException e) {
             // this is "better-ish"
             return Response.ok(this.badges(userId, e)).build();
@@ -86,7 +82,7 @@ public class BadgeResource extends BaseResource {
 
     @Authenticated
     @GET
-    @Path("secure/badges.html")
+    @Path("list.html")
     @Produces(MediaType.TEXT_HTML)
     @NoCache
     public TemplateInstance badges() throws ShadowbadgeException {
@@ -96,7 +92,7 @@ public class BadgeResource extends BaseResource {
     private TemplateInstance badges(final String userId, final Exception error) {
         // get by owner id
         final List<Badge> list = badgeRepo.listForOwner(userId);
-        final TemplateInstance badgeInstance = this.badges.data("badges", list);
+        final TemplateInstance badgeInstance = this.list.data("badges", list);
 
         if (error != null) {
             badgeInstance.data("error", true);
@@ -105,7 +101,7 @@ public class BadgeResource extends BaseResource {
             badgeInstance.data("error", false);
         }
 
-        badgeInstance.data("userid", userId);
+        badgeInstance.data("identity", this.getIdentity());
 
         // return instance
         return badgeInstance;
@@ -139,7 +135,7 @@ public class BadgeResource extends BaseResource {
 
     @Authenticated
     @GET
-    @Path("secure/{badgeId}/detail.html")
+    @Path("{badgeId}/detail.html")
     @Produces(MediaType.TEXT_HTML)
     public Response detailHtml(
         @PathParam("badgeId") final String badgeId
@@ -158,7 +154,7 @@ public class BadgeResource extends BaseResource {
         final BadgeInfo info = badge.getInfo();
         final TemplateInstance detail = this.detail
             .data("info", info)
-            .data("userid", userId)
+            .data("identity", this.getIdentity())
             .data("badgeId", badgeId);
 
         return Response.ok(detail).build();
@@ -166,7 +162,7 @@ public class BadgeResource extends BaseResource {
 
     @Authenticated
     @POST
-    @Path("secure/{badgeId}/update")
+    @Path("{badgeId}/update")
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("badgeId") final String badgeId, final String ownerId, final BadgeInfo newInfo) throws ShadowbadgeException {
@@ -175,7 +171,7 @@ public class BadgeResource extends BaseResource {
 
     @Authenticated
     @DELETE
-    @Path("secure/{badgeId}/unclaim")
+    @Path("{badgeId}/unclaim")
     @Produces(MediaType.TEXT_PLAIN)
     public Response unclaim(@PathParam("badgeId") final String badgeId) throws ShadowbadgeException {
         this.badgeRepo.unclaim(badgeId, this.getCurrentUserId());
@@ -184,16 +180,16 @@ public class BadgeResource extends BaseResource {
 
     @Authenticated
     @GET
-    @Path("secure/{badgeId}/unclaimAction")
+    @Path("{badgeId}/unclaimAction")
     public Response unclaimAction(@PathParam("badgeId") final String badgeId) throws ShadowbadgeException {
         this.badgeRepo.unclaim(badgeId, this.getCurrentUserId());
         // if all goes ok, return home
-        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/badges.html", this.servletRequest))).build();
+        return Response.seeOther(URI.create(redirection.getRedirect("/badges/list.html", this.servletRequest))).build();
     }
 
     @Authenticated
     @POST
-    @Path("secure/{badgeId}/updateForm")
+    @Path("{badgeId}/updateForm")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response updateForm(
         @PathParam("badgeId") final String badgeId,
@@ -259,6 +255,6 @@ public class BadgeResource extends BaseResource {
         badgeRepo.updateInfo(badgeId, this.getCurrentUserId(), info);
 
         // if all goes ok, return to badges page
-        return Response.seeOther(URI.create(redirection.getRedirect("/badges/secure/badges.html", this.servletRequest))).build();
+        return Response.seeOther(URI.create(redirection.getRedirect("/badges/list.html", this.servletRequest))).build();
     }
 }

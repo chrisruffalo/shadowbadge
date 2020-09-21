@@ -20,7 +20,7 @@ public class BadgeResourceTest extends BaseResourceTest {
     @DataSet("badges.yml")
     public void testClaim() {
         given()
-            .when().put("/badges/secure/test-id-1-badge/claim")
+            .when().put("/badges/test-id-1-badge/claim")
             .then()
             .statusCode(200)
             .assertThat().body("badgeId", Matchers.equalTo("test-id-1-badge"))
@@ -33,7 +33,7 @@ public class BadgeResourceTest extends BaseResourceTest {
     @DataSet("badges.yml")
     public void testBadClaim() {
         given()
-            .when().put("/badges/secure/test-id-2-badge/claim")
+            .when().put("/badges/test-id-2-badge/claim")
             .then()
             .statusCode(Response.Status.BAD_REQUEST.getStatusCode());
     }
