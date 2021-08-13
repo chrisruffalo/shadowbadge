@@ -1,15 +1,24 @@
 apiVersion: v1
 kind: Template
-metdata:
-  name: shadowbadge-template
+metadata:
+  name: shadowbadge-app
 objects:
 # image stream target for maven builds
 - apiVersion: image.openshift.io/v1
   kind: ImageStream
   metadata:
-    name: is-shadowbadge-ui-${OUTPUT_TYPE}
+    name: "shadowbadge-app-native"
     labels:
-      app: shadowbadge-ui-${OUTPUT_TYPE}
+      app: "shadowbadge-app"
+    spec:
+      lookupPolicy:
+        local: false
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: "shadowbadge-app-jvm"
+    labels:
+      app: "shadowbadge-app"
     spec:
       lookupPolicy:
         local: false
@@ -17,16 +26,20 @@ objects:
 - apiVersion: build.openshift.io/v1
   kind: BuildConfig
   metadata:
-    name: bc-shadowbadge-ui-${OUTPUT_TYPE}
+    name: "shadowbadge-app-jvm"
     labels:
-      app: shadowbadge-ui-${OUTPUT_TYPE}
+      app: "shadowbadge-app"
   spec:
     output:
       to:
         kind: ImageStreamTag
-        name: is-shadowbadge-ui-${OUTPUT_TYPE}:latest
+        name: "shadowbadge-app-jvm:latest"
     postCommit: {}
-    resources: {}
+    resources:
+      limits:
+        memory: 64Mi
+      requests:
+        memory: 64Mi
     runPolicy: SerialLatestOnly
     source:
       binary: {}
@@ -36,50 +49,87 @@ objects:
       dockerStrategy:
         from:
           kind: DockerImage
-          name: ${DOCKER_IMAGE}
+          name: ${JVM_IMAGE}
+    triggers: []
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: "shadowbadge-app-native"
+    labels:
+      app: "shadowbadge-app"
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: "shadowbadge-app-native:latest"
+    postCommit: {}
+    resources:
+      limits:
+        memory: 64Mi
+      requests:
+        memory: 64Mi
+    runPolicy: SerialLatestOnly
+    source:
+      binary: {}
+      type: Binary
+    strategy:
+      type: Docker
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: ${NATIVE_IMAGE}
     triggers: []
 # service configuration
 - apiVersion: v1
   kind: Service
   metadata:
-    name: service-shadowbadge-ui-${OUTPUT_TYPE}
+    name: "shadowbadge-app"
     labels:
-      app: shadowbadge-ui-${OUTPUT_TYPE}
+      app: shadowbadge-app
+    annotations:
+      # in openshift 4 create a tls.key/tls.crt in the given secret for default consumption
+      "service.beta.openshift.io/serving-cert-secret-name": shadowbadge-certs
+      # in openshift 3 create a tls.key/tls.crt in the given secret for default consumption
+      "service.alpha.openshift.io/serving-cert-secret-name": shadowbadge-certs
   spec:
     ports:
     - name: 8080-tcp
       port: 8080
       protocol: TCP
       targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
     selector:
-      app: shadowbadge-ui-${OUTPUT_TYPE}
+      app: shadowbadge-app
     sessionAffinity: None
     type: ClusterIP
 # deployment configuration for shadowbadge
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
-    name: dc-shadowbadge-ui-${OUTPUT_TYPE}
+    name: "shadowbadge-app"
     labels:
-      app: shadowbadge-ui-${OUTPUT_TYPE}
-      type: ${OUTPUT_TYPE}
+      app: shadowbadge-app
   spec:
     replicas: ${{REPLICA_COUNT}}
     revisionHistoryLimit: 5
     selector:
-      deploymentConfig: dc-shadowbadge-ui-${OUTPUT_TYPE}
+      deploymentConfig: shadowbadge-app
     strategy:
       type: Rolling
     template:
       metadata:
+        name: "shadowbadge-app"
         labels:
-          app: shadowbadge-ui-${OUTPUT_TYPE}
-          deploymentConfig: dc-shadowbadge-ui-${OUTPUT_TYPE}
+          app: shadowbadge-app
+          deploymentConfig: shadowbadge-app
       spec:
         containers:
         # shadowbadge application container
-        - name: shadowbadge-ui-${OUTPUT_TYPE}
-          image: "image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/is-shadowbadge-ui-${OUTPUT_TYPE}"
+        - name: shadowbadge-app
+          image: "shadowbadge-app-${IMAGE_TYPE}:latest"
           imagePullPolicy: Always
           # override quarkus environment variables to connect to postgres
           env:
@@ -90,83 +140,86 @@ objects:
           - name: QUARKUS_DATASOURCE_PASSWORD
             value: "${POSTGRES_PASSWORD}"
           - name: SHADOWBADGE_EXTERNAL_URL
-            value: "https://${EXTERNAL_HOSTNAME}"
-          - name: SHADOWBADGE_ACCOUNT_URL
-            value: "${ACCOUNT_URL}"
+            value: "https://${EXTERNAL_HOST}"
+          - name: KEYCLOAK_SERVER_URL
+            value: "https://${KEYCLOAK_HOST}/auth/realms/${KEYCLOAK_REALM}"
+          - name: KEYCLOAK_CLIENT_ID
+            value: "${KEYCLOAK_CLIENT_ID}"
+          - name: KEYCLOAK_CLIENT_SECRET
+            value: "${KEYCLOAK_CLIENT_SECRET}"
           - name: QUARKUS_HTTP_PORT
-            value: 7070
+            value: "8080"
+          - name: QUARKUS_HTTP_SSL_PORT
+            value: "8443"
+          - name: QUARKUS_HTTP_SSL_CERTIFICATE_FILE
+            value: "/pki/tls.crt"
+          - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_FILE
+            value: "/pki/tls.key"
           ports:
-          - containerPort: 7070
-            protocol: TCP
-          dnsPolicy: ClusterFirst
-          restartPolicy: Always
-        # gatekeeper authentication sidecar
-        - name: gatekeeper
-          ports:
-          - containerPort: 8443
-            protocol: TCP
           - containerPort: 8080
             protocol: TCP
-          imagePullPolicy: Always
+          - containerPort: 8443
+            protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 7070
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 7070
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: "${MEMORY_LIMIT}"
+            requests:
+              memory: "128Mi"
           volumeMounts:
-          - name: app-shadowbadge-certs-volume
+          - name: shadowbadge-certs-volume
             mountPath: /pki/
-          terminationMessagePolicy: File
-          terminationMessagePath: /dev/termination-log
-          image: 'image-registry.openshift-image-registry.svc:5000/shadowbadge-dev/gatekeeper'
-          args:
-          # insanely helpful reference: https://github.com/keycloak/keycloak-gatekeeper/blob/master/doc.go
-          - '--listen-http=0.0.0.0:8080'
-          - '--listen=0.0.0.0:8443'
-          - '--verbose=true'
-          - '--client-id=gatekeeper'
-          - '--client-secret=<SECRET>'
-          - '--discovery-url=${KEYCLOAK_URL}/auth/realms/${KEYCLOAK_REALM}'
-          - '--enable-logging=true'
-          - '--tls-cert=/pki/cert.pem'
-          - '--tls-private-key=/pki/key.pem'
-          - '--tls-ca-certificate=/pki/ca.pem'
-          - '--redirection-url=${EXTERNAL_URL}'
-          - '--upstream-url=http://localhost:7070'
-          - '--enable-refresh-tokens=true'
-          - '--encryption-key=CHANGEME'
-          - '--enable-default-deny=false'
-          - '--resources=uri=/badges/secure/*'
-          - '--resources=uri=/*|white-listed=true'
-          - '--preserve-host=true'
-          - '--enable-security-filter=true'
-          - '--hostnames=${EXTERNAL_HOSTNAME}'
-          - '--cors-origins=${EXTERNAL_HOSTNAME},${KEYCLOAK_URL}'
-          - '--enable-logout-redirect=true'
-          - '--enable-https-redirection=true'
+            readOnly: true
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
         volumes:
-        - name: app-shadowbadge-certs-volume
-          configMap:
-            name: app-shadowbadge-certs
-            defaultMode: 420
+        - name: shadowbadge-certs-volume
+          secret:
+            secretName: ${CERTIFICATE_SECRET_NAME}
         triggers:
         - type: ImageChange
           imageChangeParams:
             automatic: true
             containerNames:
-            - shadowbadge-ui-${OUTPUT_TYPE}
+            - shadowbadge-app
             from:
               kind: ImageStreamTag
-              name: is-shadowbadge-ui-${OUTPUT_TYPE}:latest
+              name: shadowbadge-app-${IMAGE_TYPE}:latest
         - type: ConfigChange
 parameters:
-- name: OUTPUT_TYPE
-  displayName: Output Type
-  description: Type of output, either 'native' or 'jvm'
+- name: IMAGE_TYPE
+  displayName: Image Type
+  description: Type of image to run, either 'native' or 'jvm' (case sensitive).
   value: jvm
   required: true
-- name: DOCKER_IMAGE
-  displayName: Upstream Source Docker Image
-  description: Docker image, either 'fabric8/java-centos-openjdk8-jdk:latest' for JVM or 'registry.access.redhat.com/ubi8/ubi-minimal:latest' for native. (This value should match the FROM statement in the Docker iamge)
-  value: "fabric8/java-centos-openjdk8-jdk:latest"
+- name: JVM_IMAGE
+  displayName: Upstream JVM Image
+  description: Docker image, either 'fabric8/java-centos-openjdk11-jdk:latest' for JVM
+  value: "fabric8/java-centos-openjdk11-jdk:latest"
   required: true
+- name: NATIVE_IMAGE
+  displayName: Upstream Native Image
+  description:  Docker image 'registry.access.redhat.com/ubi8/ubi-minimal:latest' for native
+  value: "registry.access.redhat.com/ubi8/ubi-minimal:latest"
 - name: REPLICA_COUNT
-  value: "0"
+  value: "1"
   required: true
 - name: POSTGRES_SERVICE
   required: true
@@ -174,21 +227,34 @@ parameters:
   value: "5432"
   required: true
 - name: POSTGRES_DB
-  value: "shadowbadge"
   required: true
 - name: POSTGRES_USER
   required: true
 - name: POSTGRES_PASSWORD
   required: true
-- name: KEYCLOAK_URL
-  description: The URL to the keycloak server used for authentication. This should be the entire URL including protocol. It should not end with the trailing slash.
+- name: KEYCLOAK_HOST
+  description: The hostname to the keycloak server used for authentication.
   required: true
 - name: KEYCLOAK_REALM
   description: The name of the Keycloak realm to use.
   required: true
-- name: EXTERNAL_HOSTNAME
+- name: KEYCLOAK_CLIENT_ID
+  description: The name of the Keycloak client in the realm.
+  required: true
+- name: KEYCLOAK_CLIENT_SECRET
+  description: The credential secret for the Keycloak client.
+  required: true
+- name: EXTERNAL_HOST
   description: The external route hostname. This template does not configure the routes but if you are using Gatekeeper this is the best way to make Shadowbadge correctly redirect.
   value: ""
-- name: ACCOUNT_URL
-  description: The url to the account service on your Keycloak server. If this value is not set the "account" link redirects to the index
-  value: ""
+- name: ENCRYPTION_KEY
+  description: A key used to encrypt the value of the token exchange in Gatekeeper. Must be 16 or 32 characters. (Will be generated if left blank.)
+  from: '[a-zA-Z0-9]{32}'
+  generate: expression
+  required: true
+- name: CERTIFICATE_SECRET_NAME
+  description: A certificate secret name where the secret has a 'tls.key' and 'tls.crt' file for use by Gatekeeper. By default uses the certificates created by the shadowbadge-app service.
+  value: "shadowbadge-certs"
+- name: MEMORY_LIMIT
+  description: The upper memory limit of the Shadowbadge UI Pod
+  value: "512Mi"

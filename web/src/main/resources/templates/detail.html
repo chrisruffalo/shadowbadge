@@ -1,10 +1,10 @@
 {#include base}
     {#title}Shadowbadge :: Details{/}
     {#body}
-    {#if info != null}
+    {#if info}
     <div>
         <h3>Badge Details</h3>
-        <form action="/badges/secure/{badgeId}/updateForm" method="post">
+        <form action="/badges/{badgeId}/updateForm" method="post">
             <div class="form-group">
                 <label for="inputDisplayName">Display Name</label>
                 <input type="text" value="{info.displayName}" class="form-control" id="inputDisplayName" name="displayName" aria-describedby="inputDisplayName" placeholder="My favorite badge">
@@ -18,16 +18,16 @@
             <div class="form-group">
                 <label for="badgeLayoutSelect">Layout Style</label>
                 <select class="form-control" id="badgeLayoutSelect" name="style">
-                    <option value="ICON_RIGHT" label="Icon Right" selected="{info.style == 'ICON_RIGHT'}">Icon Right</option>
-                    <option value="ICON_LEFT" label="Icon Left" selected="{info.style == 'ICON_LEFT'}">Icon Left</option>
+                    <option value="ICON_RIGHT" label="Icon Right" {util:enumMatches(info.style, 'ICON_RIGHT') ? 'selected' : ''}>Icon Right</option>
+                    <option value="ICON_LEFT" label="Icon Left" {util:enumMatches(info.style, 'ICON_LEFT') ? 'selected' : ''}>Icon Left</option>
                 </select>
                 <small id="badgeLayoutSelectHelp" class="form-text text-muted">The layout/style of the badge.</small>
             </div>
             <div class="form-group">
                 <label for="badgeIconSelect">Badge Icon</label>
                 <select class="form-control" id="badgeIconSelect" name="icon">
-                    <option value="RED_HAT" label="Red Hat" selected="{info.icon == 'RED_HAT'}">Red Hat</option>
-                    <option value="SHADOWMAN" label="Shadowman" selected="{info.icon == 'SHADOWMAN'}">Shadowman</option>
+                    <option value="RED_HAT" label="Red Hat" {util:enumMatches(info.icon, 'RED_HAT') ? 'selected' : ''}>Red Hat</option>
+                    <option value="SHADOWMAN" label="Shadowman" {util:enumMatches(info.icon, 'SHADOWMAN') ? 'selected' : '' }>Shadowman</option>
                 </select>
                 <small id="badgeIconSelectHelp" class="form-text text-muted">Badge icon displayed according to selected layout.</small>
             </div>
@@ -54,13 +54,13 @@
             <div class="form-group">
                 <label for="qrTypeSelect">QR Code Type</label>
                 <select class="form-control" id="qrTypeSelect" name="qrType" onchange="showHideCustomQr()">
-                    <option value="RELATIVE" label="Shadowbadge Link" selected="{info.qrType == 'RELATIVE'}">Shadowbadge Link</option>
-                    <option value="CUSTOM" label="Custom QR Code" selected="{info.qrType == 'CUSTOM'}">Custom Data</option>
-                    <option value="NONE" label="No QR Code" selected="{info.qrType == 'NONE'}">No QR Code</option>
+                    <option value="RELATIVE" label="Shadowbadge Link" {util:enumMatches(info.qrType, 'RELATIVE') ? 'selected' : ''}>Shadowbadge Link</option>
+                    <option value="CUSTOM" label="Custom QR Code" {util:enumMatches(info.qrType, 'CUSTOM') ? 'selected' : ''}>Custom Data</option>
+                    <option value="NONE" label="No QR Code" {util:enumMatches(info.qrType, 'NONE') ? 'selected' : ''}>No QR Code</option>
                 </select>
                 <small id="qrTypeSelectHelp" class="form-text text-muted">The type of QR code that will be shown on the badge.</small>
             </div>
-            <div id="customQrFormRow" class="form-row {info.qrType == 'CUSTOM' ? '' : 'd-none'}" >
+            <div id="customQrFormRow" class="form-row {util:enumMatches(info.qrType, 'CUSTOM') ? '' : 'd-none'}" >
                 <div id="customQRFormGroup" class="form-group col-lg-11 col-10">
                     <label for="inputCustomQR">Custom QR Code</label>
                     <input id="inputCustomQR" type="text" maxlength="400" value="{info.qrCode}" class="form-control qrcode-text" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
@@ -79,15 +79,15 @@
             </div>
             <br/>
             <button type="submit" class="btn btn-primary">Submit</button>
-            <a href="/badges/secure/badges.html" class="btn btn-secondary">Cancel</a>
+            <a href="/badges/list.html" class="btn btn-secondary">Cancel</a>
         </form>
         <br/><br/><br/><br/>
     </div>
     {/if}
 
-    {#if info == null}
+    {#if !info}
     <div>
-        <h2>An error occurred while fetching badge details for badge. <a href="badges.html">Return to badges.</a></h2>
+        <h2>An error occurred while fetching badge details for badge. <a href="list.html">Return to badges.</a></h2>
     </div>
     {/if}
     {/}

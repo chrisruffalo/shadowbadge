@@ -27,18 +27,18 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/downloads.html">Downloads</a>
                 </li>
-                <li class="nav-item logged-out {userid ? '' : 'd-none'}">
-                    <a class="nav-link" href="/badges/secure/badges.html">Login</a>
+                {#if util:isAnon(identity)}
+                <li class="nav-item">
+                    <a class="nav-link" href="/badges/list.html">Login</a>
                 </li>
-                <li class="nav-item logged-in {userid ? '' : 'd-none'}">
-                    <a class="nav-link" href="/badges/secure/badges.html">Badges</a>
+                {#else}
+                <li class="nav-item">
+                    <a class="nav-link" href="/badges/list.html">Badges</a>
                 </li>
-                <li class="nav-item logged-in {userid ? '' : 'd-none'}">
-                    <a class="nav-link" href="/account">Account</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
                 </li>
-                <li class="nav-item logged-in {userid ? '' : 'd-none'}">
-                    <a class="nav-link" href="/oauth/logout">Logout</a>
-                </li>
+                {/if}
             </ul>
         </div>
     </div>
@@ -64,20 +64,5 @@
 <!-- shadowbadge logic -->
 <script src="/js/shadowbadge.js"></script>
 
-<!-- alternate way to validate login if no userid is available -->
-{#if !userid}
-<script>
-    axios.get('/badges/secure/badges.html')
-        .then((response) => {
-            if (response != null && response.status <= 299) {
-                $('.logged-out').addClass("d-none");
-                $('.logged-in').removeClass("d-none");
-            }
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-</script>
-{/if}
 </body>
 </html>

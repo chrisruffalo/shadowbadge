@@ -6,7 +6,7 @@
   <artifactId>shadowbadge</artifactId>
   <version>${revision}</version>
   <properties>
-    <revision>1.0.8</revision>
+    <revision>1.0.9</revision>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <surefire-plugin.version>2.22.0</surefire-plugin.version>
     <quarkus.version>2.1.1.Final</quarkus.version>
@@ -62,6 +62,10 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy-qute</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-oidc</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>stax</groupId>
@@ -93,7 +97,7 @@
     <dependency>
       <groupId>org.boofcv</groupId>
       <artifactId>boofcv-core</artifactId>
-      <version>0.34</version>
+      <version>0.36.1</version>
     </dependency>
 
     <!-- zebra crossing qr detection -->
@@ -128,6 +132,11 @@
       <groupId>com.github.database-rider</groupId>
       <artifactId>rider-cdi</artifactId>
       <version>1.16.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-test-security</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -272,10 +281,7 @@
                 </goals>
                 <configuration>
                   <enableHttpUrlHandler>true</enableHttpUrlHandler>
-                  <additionalBuildArgs>
-                    <additionalBuildArg>-H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resource-config.json</additionalBuildArg>
-                    <additionalBuildArg>-H:Log=registerResource</additionalBuildArg>
-                  </additionalBuildArgs>
+                  <additionalBuildArgs/>
                 </configuration>
               </execution>
             </executions>
@@ -331,7 +337,7 @@
                   <executable>oc</executable>
                   <arguments>
                     <argument>start-build</argument>
-                    <argument>bc-shadowbadge-ui-jvm</argument>
+                    <argument>shadowbadge-app-jvm</argument>
                     <argument>-F</argument>
                     <argument>--from-dir</argument>
                     <argument>${project.build.directory}/deployments/jvm</argument>
@@ -367,7 +373,7 @@
                   <executable>oc</executable>
                   <arguments>
                     <argument>start-build</argument>
-                    <argument>bc-shadowbadge-ui-native</argument>
+                    <argument>shadowbadge-app-native</argument>
                     <argument>-F</argument>
                     <argument>--from-dir</argument>
                     <argument>${project.build.directory}/deployments/native</argument>

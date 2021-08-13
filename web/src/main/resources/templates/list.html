@@ -1,5 +1,5 @@
 {#include base}
-    {#title}Shadowbadge :: Badges</>
+    {#title}Shadowbadge :: Badges{/}
     {#body}
     {#if error}
     <div>
@@ -14,7 +14,7 @@
     </div>
     {/if}
 
-    {#if badges != null && badges.size > 0}
+    {#if util:hasContents(badges)}
     <div>
         <table class="table shadowbadge-table-hover">
            <thead>
@@ -25,7 +25,7 @@
            </thead>
             <tbody>
                 {#for badge in badges}
-                <tr class="detailRow" onclick="rowClicked('/badges/secure/{badge.badgeId}/detail.html')">
+                <tr class="detailRow" onclick="rowClicked('/badges/{badge.badgeId}/detail.html')">
                     <td class="text-truncate align-middle">
                         <div>
                             <p style="margin-bottom: 0px"><strong><span>{str:abbreviate(badge.info.displayName, 25)}</span></strong></p>
@@ -33,7 +33,7 @@
                         </div>
                     </td>
                     <td class="text-right align-middle">
-                        <button class="btn btn-danger" onclick="unlcaimModal(event, '#unclaimModal', '#unclaimModalDisplay', '#unclaimLocation', '{badge.info.displayName}', '/badges/secure/{badge.badgeId}/unclaimAction')">Unclaim</button>
+                        <button class="btn btn-danger" onclick="unlcaimModal(event, '#unclaimModal', '#unclaimModalDisplay', '#unclaimLocation', '{badge.info.displayName}', '/badges/{badge.badgeId}/unclaimAction')">Unclaim</button>
                     </td>
                 </tr>
                 {/for}
@@ -65,7 +65,7 @@
     </div>
     {/if}
 
-    {#if badges == null || badges.size < 1}
+    {#if !util:hasContents(badges)}
     <div>
         <h3>You have no claimed badges</h3>
         <p>Please upload the proper firmware to your Badgy device and then connect it to wifi. See the <a href="/downloads.html">downloads</a> page for more details.</p>

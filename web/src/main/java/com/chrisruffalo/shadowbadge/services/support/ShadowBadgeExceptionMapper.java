@@ -1,6 +1,7 @@
 package com.chrisruffalo.shadowbadge.services.support;
 
 import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
+import io.quarkus.qute.TemplateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,6 @@ public class ShadowBadgeExceptionMapper implements javax.ws.rs.ext.ExceptionMapp
     @Override
     public Response toResponse(Throwable throwable) {
         final Logger logger = LoggerFactory.getLogger(throwable.getStackTrace()[0].getClassName());
-        logger.error(throwable.getMessage());
 
         int statusCode = Response.Status.BAD_REQUEST.getStatusCode();
 
@@ -28,9 +28,16 @@ public class ShadowBadgeExceptionMapper implements javax.ws.rs.ext.ExceptionMapp
 
             // print full stack trace for more serious exceptions that need more detail
             // but print small only the error for lesser-known exceptions
-            if (false) {
-                logger.error("Exception", throwable);
+            if (
+               throwable instanceof UnsatisfiedLinkError
+            || throwable instanceof TemplateException
+            ) {
+                logger.error("", throwable);
+            } else {
+                logger.error("{}: {}", throwable.getClass().getName(), throwable.getMessage());
             }
+        } else {
+            logger.error(throwable.getMessage());
         }
 
         if (throwable instanceof NotFoundException) {
