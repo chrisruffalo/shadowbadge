@@ -11,6 +11,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 
 @WebServlet(
     name = "Account Redirect Servlet",
@@ -21,7 +22,7 @@ public class AccountServlet implements Servlet {
     private static final String INDEX = "/index.html";
 
     @ConfigProperty(name = "shadowbadge.account.url", defaultValue = "")
-    String authUrl;
+    Optional<String> accountUrl;
 
     @Inject
     Redirection redirection;
@@ -40,8 +41,8 @@ public class AccountServlet implements Servlet {
     public void service(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
         if (servletResponse instanceof HttpServletResponse ) {
             final HttpServletResponse response = (HttpServletResponse)servletResponse;
-            if (!authUrl.isEmpty()) {
-                response.sendRedirect(response.encodeRedirectURL(authUrl));
+            if (accountUrl.isPresent() && !accountUrl.get().isEmpty()) {
+                response.sendRedirect(response.encodeRedirectURL(accountUrl.get()));
             } else {
                 response.sendRedirect(response.encodeRedirectURL(this.redirection.getRedirect(INDEX, servletRequest)));
             }
