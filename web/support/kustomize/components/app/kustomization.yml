@@ -1,0 +1,9 @@
+namePrefix: "shadowbadge-"
+bases:
+  - ../../shared/deployment
+patches:
+  - path: shadowbadge-app.yml
+  - path: shadowbadge-service.yml
+images:
+  - name: deployment-image
+    newName: shadowbadge-jvm:latest

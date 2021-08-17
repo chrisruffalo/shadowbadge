@@ -1,0 +1,6 @@
+images:
+  # wire deployment configurations to also pick up image change params
+  - kind: DeploymentConfig
+    path: spec/triggers/imageChangeParams/from/name
+  - kind: DeploymentConfig
+    path: spec/template/spec/containers/image

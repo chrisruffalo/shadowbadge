@@ -1,0 +1,23 @@
+nameReference:
+  # enables the downward api to function on transformed config map resources
+  - kind: ConfigMap
+    fieldSpecs:
+      - path: spec/template/spec/containers/env/valueFrom/configMapKeyRef/name
+        kind: DeploymentConfig
+  # enables deployment configs to self-reference their own changed names and the names of other resources (as needed)
+  - kind: DeploymentConfig
+    fieldSpecs:
+      - path: metadata/annotations/deploymentConfig
+      - path: spec/selector/deploymentConfig
+      - path: spec/template/metadata/labels/deploymentConfig
+      - path: spec/template/metadata/name
+  # enables routes to find services
+  - kind: Service
+    fieldSpecs:
+      - path: spec/to/name
+        kind: Route
+  # enables service to find targets
+  - kind: Service
+    fieldSpecs:
+      - path: spec/selector/deploymentConfig
+        kind: DeploymentConfig

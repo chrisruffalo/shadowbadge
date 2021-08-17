@@ -1,0 +1,6 @@
+syndo:
+  components:
+    - name: shadowbadge-jvm
+      from: registry.hub.docker.com/fabric8/java-centos-openjdk11-jdk
+      path: ${basedir}/target
+      storage: vfs

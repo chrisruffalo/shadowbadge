@@ -1,0 +1,16 @@
+{#include base}
+    {#title}Shadowbadge :: Seen{/}
+    {#body}
+    {#if info}
+    <div>
+        <p><strong>You saw {info.displayName}!</strong> They have been seen {seen} times</p>
+    </div>
+    {/if}
+
+    {#if !info}
+    <div>
+        <p><strong>An error occurred while fetching badge details.</strong></p>
+    </div>
+    {/if}
+    {/}
+{/include}

@@ -1,5 +1,6 @@
 package com.chrisruffalo.shadowbadge.dal;
 
+import com.chrisruffalo.shadowbadge.exceptions.AlreadyClaimedBadgeException;
 import com.chrisruffalo.shadowbadge.exceptions.RepositoryException;
 import com.chrisruffalo.shadowbadge.model.Badge;
 import com.chrisruffalo.shadowbadge.model.BadgeInfo;
@@ -21,9 +22,9 @@ public class BadgeRepo extends AbstractRepo<Badge> {
     public static final String REPO = "BADGES";
 
     // build once
-    private Nomen nomen = Nomen.est().adjective().adjective().animal();
+    private final Nomen nomen = Nomen.est().adjective().adjective().animal();
 
-    private Logger logger = LoggerFactory.getLogger(BadgeRepo.class);
+    private final Logger logger = LoggerFactory.getLogger(BadgeRepo.class);
 
     @Inject
     EntityManager em;
@@ -45,6 +46,10 @@ public class BadgeRepo extends AbstractRepo<Badge> {
 
     public Badge getByBadgeId(String badgeId) {
         return this.get(Badge.class, badgeId, Badge.QUERY_GET_BADGE_ID, Badge.PARAM_BADGE_ID);
+    }
+
+    public Badge getByShortId(String shortId) {
+        return this.get(Badge.class, shortId, Badge.QUERY_GET_SHORT_ID, Badge.PARAM_SHORT_ID);
     }
 
     /**
@@ -76,6 +81,7 @@ public class BadgeRepo extends AbstractRepo<Badge> {
             badge.setShortId(this.uniqueShortId());
             badge.setOwnerId(ownerId);
             badge.setStatus(ConfigurationStatus.CLAIMED);
+            badge.setSeen(0L);
 
             // only set secret if a secret is provided
             if (null != secret && !secret.isEmpty()) {
@@ -95,8 +101,9 @@ public class BadgeRepo extends AbstractRepo<Badge> {
             return badge;
         }
 
-        if (null != badge.getOwnerId()) {
-            throw new RepositoryException("Cannot claim an already-claimed badge");
+        final String updatedOwnerId = badge.getOwnerId();
+        if (!ConfigurationStatus.UNCLAIMED.equals(badge.getStatus()) && null != updatedOwnerId && !updatedOwnerId.isEmpty()) {
+            throw new AlreadyClaimedBadgeException(badgeId, updatedOwnerId, "Cannot claim an already-claimed badge");
         }
 
         // claim badge by setting the owner id
@@ -155,6 +162,23 @@ public class BadgeRepo extends AbstractRepo<Badge> {
     }
 
     @Transactional
+    public long see(final String shortId) {
+        final Badge existingBadge = this.getByShortId(shortId);
+        if (existingBadge == null) {
+            logger.warn("action 'see' requested for non-existent shortId='{}'", shortId);
+            return 0;
+        }
+        existingBadge.setSeen(existingBadge.getSeen() + 1);
+        try {
+            this.em.merge(existingBadge);
+            logger.info("action 'seen' for '{}' updated count to {}", shortId, existingBadge.getSeen());
+        } catch (PersistenceException ex) {
+            logger.info("Could not update seen count for '{}': {}", shortId, ex.getMessage());
+        }
+        return existingBadge.getSeen();
+    }
+
+    @Transactional
     public void unclaim(final String badgeId, final String ownerId) throws RepositoryException{
         if (null == badgeId || badgeId.isEmpty()) {
             throw new RepositoryException("Cannot modify badge without providing a badge id");
@@ -187,20 +211,6 @@ public class BadgeRepo extends AbstractRepo<Badge> {
         }
 
         logger.info("Unclaimed badge='{}'", badgeId);
-    }
-
-    @Transactional
-    private void updateShortBadgeId(final Badge existingBadge) {
-        // try and create new short id if one does not exist
-        if (null == existingBadge.getShortId() || existingBadge.getShortId().isEmpty()) {
-            existingBadge.setShortId(this.uniqueShortId());
-            try {
-                this.em.merge(existingBadge);
-            } catch (PersistenceException ex) {
-                this.logger.error("Could not update shortId for badge='{}'", existingBadge.getBadgeId());
-                this.logger.error("Exception", ex);
-            }
-        }
     }
 
     /**

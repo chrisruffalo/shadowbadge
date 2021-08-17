@@ -1,0 +1,12 @@
+# idea
+.idea
+*.iml
+
+# maven
+target
+
+# quarkus
+ObjectStore
+
+# sensitive environment files
+support/kustomize/environments/prod*

@@ -26,22 +26,22 @@ import java.util.List;
         name = Badge.QUERY_GET,
         query = "SELECT badge FROM Badge badge WHERE id = :" + Badge.PARAM_ID,
         hints = {
-                @QueryHint(name = "org.hibernate.cacheable", value = "true")
+            @QueryHint(name = "org.hibernate.cacheable", value = "true")
         }
     ),
     @NamedQuery(
         name = Badge.QUERY_GET_BADGE_ID,
         query = "SELECT badge FROM Badge badge WHERE badgeId = :" + Badge.PARAM_BADGE_ID,
         hints = {
-                @QueryHint(name = "org.hibernate.cacheable", value = "true")
+            @QueryHint(name = "org.hibernate.cacheable", value = "true")
         }
     ),
     @NamedQuery(
-            name = Badge.QUERY_GET_SHORT_ID,
-            query = "SELECT badge FROM Badge badge WHERE shortId = :" + Badge.PARAM_SHORT_ID,
-            hints = {
-                    @QueryHint(name = "org.hibernate.cacheable", value = "true")
-            }
+        name = Badge.QUERY_GET_SHORT_ID,
+        query = "SELECT badge FROM Badge badge WHERE shortId = :" + Badge.PARAM_SHORT_ID,
+        hints = {
+            @QueryHint(name = "org.hibernate.cacheable", value = "true")
+        }
     ),
     @NamedQuery(
         name = Badge.QUERY_ALL,
@@ -91,6 +91,9 @@ public class Badge extends BaseEntity {
     @Embedded
     @JsonUnwrapped
     private BadgeInfo info;
+
+    @Column
+    private Long seen = 0L;
 
     public String getOwnerId() {
         return ownerId;
@@ -144,6 +147,20 @@ public class Badge extends BaseEntity {
 
     public void setSecret(String secret) {
         this.secret = secret;
+    }
+
+    public Long getSeen() {
+        if (seen == null) {
+            seen = 0L;
+        }
+        return seen;
+    }
+
+    public void setSeen(Long seen) {
+        if (seen == null) {
+            return;
+        }
+        this.seen = seen;
     }
 
     @Transient

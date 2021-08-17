@@ -1,6 +1,7 @@
 package com.chrisruffalo.shadowbadge.dal;
 
 import com.chrisruffalo.shadowbadge.exceptions.RepositoryException;
+import com.chrisruffalo.shadowbadge.model.Badge;
 import com.chrisruffalo.shadowbadge.model.BaseEntity;
 
 import javax.persistence.EntityManager;
@@ -76,6 +77,4 @@ public abstract class AbstractRepo<T extends BaseEntity> {
 
         return entity;
     }
-
-
 }

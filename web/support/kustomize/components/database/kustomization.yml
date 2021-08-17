@@ -1,0 +1,11 @@
+bases:
+  - ../../shared/deployment
+namePrefix: shadowbadge-database-
+resources:
+  - database-is.yml
+patches:
+  - path: database-dc.yml
+  - path: database-service.yml
+images:
+  - name: deployment-image
+    newName: shadowbadge-database-is:latest

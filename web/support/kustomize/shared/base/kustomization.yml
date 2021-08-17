@@ -1,0 +1,6 @@
+commonLabels:
+  app: shadowbadge
+configurations:
+  - namerefs.yml
+  - prefixsuffix.yml
+  - images.yml

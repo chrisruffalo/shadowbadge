@@ -1,0 +1,101 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: "dc"
+spec:
+  template:
+    spec:
+      containers:
+        # shadowbadge application container
+        - name: main
+          # override quarkus environment variables to connect to postgres
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: QUARKUS_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: database-config
+                  key: DATABASE
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              value: "jdbc:postgresql://shadowbadge-database-service.$(NAMESPACE).svc:5432/$(QUARKUS_DB_NAME)"
+            - name: QUARKUS_DATASOURCE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: database-config
+                  key: DATABASE_USER
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: database-config
+                  key: DATABASE_PASSWORD
+            - name: KEYCLOAK_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-config
+                  key: KEYCLOAK_HOST
+            - name: KEYCLOAK_REALM
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-config
+                  key: KEYCLOAK_REALM
+            - name: KEYCLOAK_SERVER_URL
+              value: "https://$(KEYCLOAK_HOST)/auth/realms/$(KEYCLOAK_REALM)"
+            - name: KEYCLOAK_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-config
+                  key: KEYCLOAK_CLIENT_ID
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-config
+                  key: KEYCLOAK_CLIENT_SECRET
+            - name: QUARKUS_HTTP_PORT
+              value: "8080"
+            - name: QUARKUS_HTTP_SSL_PORT
+              value: "8443"
+            - name: QUARKUS_HTTP_SSL_CERTIFICATE_FILE
+              value: "/pki/tls.crt"
+            - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_FILE
+              value: "/pki/tls.key"
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8443
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: "1024Mi"
+            requests:
+              memory: "128Mi"
+          volumeMounts:
+            - name: shadowbadge-certs-volume
+              mountPath: /pki/
+              readOnly: true
+      volumes:
+        - name: shadowbadge-certs-volume
+          secret:
+            # can't use a name ref here because serving certs are automatically
+            # generated and not within the reference-space of kustomize
+            secretName: shadowbadge-serving-cert-secret

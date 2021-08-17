@@ -48,4 +48,28 @@ public class BadgeResourceTest extends BaseResourceTest {
             .assertThat().body("heading", Matchers.equalTo("My Name"))
             .assertThat().body("title", Matchers.equalTo("Build Bot"));
     }
+
+    @Test
+    @DataSet("badges.yml")
+    public void seen() {
+        given()
+            .when().get("/badges/i-will-be-seen-badge")
+            .then()
+            .statusCode(200)
+            .assertThat().body("seen", Matchers.equalTo(200));
+
+        // see this one (and extract count)
+        given()
+            .when().get("/badges/see-me-now/seen")
+            .then()
+            .statusCode(200)
+            .body("seen", Matchers.equalTo(201));
+
+        // nothing here, find the "none" segment
+        given()
+                .when().get("/badges/do-not-see-me/seen")
+                .then()
+                .statusCode(200)
+                .body("seen", Matchers.equalTo(0));
+    }
 }

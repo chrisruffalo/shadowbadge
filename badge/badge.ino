@@ -27,7 +27,7 @@ extern "C" {
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
 #include <GxIO/GxIO.h>
 
-/* WiFi  libs*/
+/* WiFi and WiFi-related libs*/
 #include <ESP8266WiFi.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
@@ -64,12 +64,9 @@ char secret[8] = ""; // secret must be presented to endpoint in order to get con
 char uuid[64];
 
 // application root
-const char* applicationHost = "app.shadowbadge.cloud";
-const char* applicationRoot = "https://app.shadowbadge.cloud";
+const char* applicationHost = "shadowbadge.apps.cluster.ruffalo.org";
+const char* applicationRoot = "https://shadowbadge.apps.cluster.ruffalo.org";
 const int applicationPort = 443;
-
-//const uint8_t fingerprint[20] = {0x42, 0xBB, 0x65, 0xB4, 0xFA, 0x14, 0x70, 0x22, 0xE9, 0x37, 0x9F, 0xCD, 0x05, 0xE5, 0xA1, 0x18, 0xCD, 0xE9, 0x86, 0xA4};
-const char fingerprint[] = "42 BB 65 B4 FA 14 70 22 E9 37 9F CD 05 E5 A1 18 CD E9 86 A4";
 
 /* where values are loaded from configuration */
 const char* key_owner_id = "ownerId";
@@ -326,12 +323,12 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   Serial.println();
-  Serial.println("Shadowbadge starting");
+  Serial.println("Shadowbadge starting...");
   Serial.println(ESP.getFreeHeap());
   Serial.println();
 
-  // client and http pieces
-  client.setFingerprint(fingerprint);
+  // client and https pieces
+  client.setInsecure();
   client.setBufferSizes(minSslBuffer, maxSslBuffer);
 
   // override max power setting (20.5)
@@ -353,13 +350,19 @@ void setup()
      - if no configuration do wifi thing
      - if not claimed to claim thing
   */
+  boolean pressUp = bitRead(reading, 4) == 0;
+  boolean pressDown = bitRead(reading, 0) == 0; // does not appear to work right at start, may not be the right pin
+  boolean pressLeft = bitRead(reading, 1) == 0;
+  boolean pressRight = bitRead(reading, 3) == 0;
+  boolean pressCenter = bitRead(reading, 2) == 0;
+  
   // up: delete configuration
-  if ( bitRead(reading, 4) == 0 ) {
+  if ( pressUp ) {
     deleteConfig();
   }
 
   // up or right: remove wifi settings
-  if ( bitRead(reading, 3) == 0 ) {
+  if ( pressUp || pressRight ) {
     wifiManager.resetSettings();
   }
 
@@ -373,13 +376,13 @@ void setup()
   }
 
   // up center left right: need wifi
-  if (bitRead(reading, 4) == 0 || bitRead(reading, 3) == 0 || bitRead(reading, 1) == 0 || bitRead(reading, 2) == 0 || needsClaim ) {
+  if (pressUp || pressLeft || pressCenter || pressRight || needsClaim ) {
     // these modes require a configured wifi
     connectWifi();
   }
 
-  // pressing left puts you in OTA update mode
-  if (bitRead(reading, 1) == 0) {
+  // pressing left or down puts you in OTA update mode
+  if (pressLeft || pressDown) {
     ESP8266WebServer httpServer(port);
     ESP8266HTTPUpdateServer httpUpdater;
     httpUpdater.setup(&httpServer);
@@ -391,7 +394,7 @@ void setup()
   }   
 
   // pressing center starts refresh mode (this will also happen after initial claim if no claim is made)
-  if (bitRead(reading, 2) == 0 || needsClaim) {
+  if (pressCenter || needsClaim) {
     needsRefresh = true;
   }
 
@@ -438,7 +441,7 @@ void updateBadgeInfo() {
  
   // build full url
   char url[512];
-  sprintf(url, "%s/badges/%s", applicationRoot, uuid);
+  sprintf(url, "/badges/%s", uuid);
 
   Serial.printf("Connecting to %s with secret %s\n", url, secret);
 
@@ -575,10 +578,10 @@ void loop()
         if (bitRead(buttonState, i) == 0) {
           switch (i) {
             case 0:
-              // don't use this, down is weird on this board
+              // don't use this, down is weird at runtime on this board
               break;
             case 1:
-              // don't use this, left is weird on this board
+              // don't use this, left is weird at runtime on this board
               break;
             case 2:
               // if the user presses the center button add update to the loop
@@ -1008,7 +1011,7 @@ void showClaimInfo() {
   
   // create url
   char url[2048];
-  sprintf(url, "%s/badges/secure/%s/claimAction?secret=%s", applicationRoot, uuid, secret);
+  sprintf(url, "%s/badges/%s/claimAction?secret=%s", applicationRoot, uuid, secret);
   showQR(200, 38, 2, 7, ECC_LOW, url, false);
 
   const GFXfont* f = &overpass_mono_bold8pt7b;

@@ -1,0 +1,28 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: "dc"
+spec:
+  template:
+    spec:
+      containers:
+        - name: main
+          env:
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: database-config
+                  key: DATABASE
+            - name: POSTGRESQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: database-config
+                  key: DATABASE_USER
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: database-config
+                  key: DATABASE_PASSWORD
+          ports:
+            - containerPort: 5432
+              protocol: TCP

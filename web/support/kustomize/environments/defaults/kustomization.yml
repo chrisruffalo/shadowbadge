@@ -1,0 +1,8 @@
+bases:
+  - ../../components/app
+  - ../../components/database
+
+configMapGenerator:
+  - name: database-config
+    envs:
+      - database.env

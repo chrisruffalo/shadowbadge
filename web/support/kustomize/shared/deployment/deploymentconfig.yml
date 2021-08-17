@@ -1,0 +1,31 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: "dc"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    deploymentConfig: dc
+  strategy:
+    type: Rolling
+  template:
+    metadata:
+      name: "dc"
+      labels:
+        deploymentConfig: dc
+    spec:
+      containers:
+        - name: main
+          image: deployment-image
+          imagePullPolicy: Always
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - main
+        from:
+          kind: ImageStreamTag
+          name: deployment-image

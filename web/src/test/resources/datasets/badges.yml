@@ -14,3 +14,13 @@ badges:
     groupName: "Dev"
     location: "Somewhere, Earth"
     tagline: "123, 123, test"
+  - id: "i-will-be-seen"
+    badgeId: "i-will-be-seen-badge"
+    shortId: "see-me-now"
+    seen: 200
+    displayName: "See Me"
+    heading: "See Me"
+    title: "Build Bot"
+    groupName: "Dev"
+    location: "Somewhere, Earth"
+    tagline: "123, 123, test"

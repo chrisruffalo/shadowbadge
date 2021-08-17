@@ -1,0 +1,12 @@
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: is
+spec:
+  tags:
+    - name: latest
+      annotations: {}
+      from:
+        kind: ImageStreamImage
+        name: postgresql@sha256:55dbebc7e210a93f98fb21e94273d82856d8801addf9917d1a4c3695c2257a64
+        namespace: openshift

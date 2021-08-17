@@ -10,16 +10,12 @@ import javax.servlet.ServletRequest;
 @Singleton
 public class Redirection {
 
-    private static final String UNCONFIGURED_EXTERNAL_URL = "shadowbadge.external.url.unconfigured";
     private static final int STANDARD_HTTP_PORT = 80;
     private static final int STANDARD_HTTPS_PORT = 443;
 
-    @ConfigProperty(name = "shadowbadge.external.url", defaultValue = UNCONFIGURED_EXTERNAL_URL)
-    String externalUrl;
-
     @PostConstruct
     public void init() {
-        LoggerFactory.getLogger(this.getClass()).info("Using external URL: {}", externalUrl);
+
     }
 
     public String getRedirect(final String to, ServletRequest request) {
@@ -28,15 +24,13 @@ public class Redirection {
             return "";
         }
 
-        // here we decide if the value has been configured and if it has not we try and build the path from the server name
-        String redirectBase = externalUrl;
-        if (UNCONFIGURED_EXTERNAL_URL.equals(externalUrl)) {
-            if (("http".equals(request.getScheme()) && request.getServerPort() != STANDARD_HTTP_PORT)
-            || ("https".equals(request.getScheme()) && request.getServerPort() != STANDARD_HTTPS_PORT)) {
-                redirectBase = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
-            } else {
-                redirectBase = String.format("%s://%s", request.getScheme(), request.getServerName());
-            }
+        // build the path from the request
+        String redirectBase;
+        if (("http".equals(request.getScheme()) && request.getServerPort() != STANDARD_HTTP_PORT)
+        || ("https".equals(request.getScheme()) && request.getServerPort() != STANDARD_HTTPS_PORT)) {
+            redirectBase = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
+        } else {
+            redirectBase = String.format("%s://%s", request.getScheme(), request.getServerName());
         }
 
         // can't do a fully qualified redirect if no external url is provided
@@ -49,7 +43,7 @@ public class Redirection {
             return redirectBase + to.substring(1);
         }
 
-        // otherwise only one of them has the slash so it is fine
+        // otherwise, only one of them has the slash so it is fine
         if (redirectBase.endsWith("/") || to.startsWith("/")) {
             return redirectBase + to;
         }

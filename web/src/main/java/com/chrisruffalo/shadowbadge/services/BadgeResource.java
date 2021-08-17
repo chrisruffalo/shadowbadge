@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.print.attribute.standard.Media;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
@@ -37,6 +38,9 @@ public class BadgeResource extends BaseResource {
 
     @Inject
     Template detail;
+
+    @Inject
+    Template seen;
 
     @Context
     HttpServletRequest servletRequest;
@@ -256,5 +260,31 @@ public class BadgeResource extends BaseResource {
 
         // if all goes ok, return to badges page
         return Response.seeOther(URI.create(redirection.getRedirect("/badges/list.html", this.servletRequest))).build();
+    }
+
+    @GET
+    @Path("{shortId}/seen.html")
+    @Produces(MediaType.TEXT_HTML)
+    public Response seenHtml(@PathParam("shortId") final String shortId) throws ShadowbadgeException {
+        // update seen count
+        long seenCount = badgeRepo.see(shortId);
+
+        // get updated badge
+        final Badge badge = badgeRepo.getByShortId(shortId);
+        final BadgeInfo info = badge != null ? badge.getInfo() : null;
+
+        // create template
+        final TemplateInstance seenInstance = this.seen.data("info", info).data("seen", seenCount);
+
+        return Response.ok(seenInstance).build();
+    }
+
+    @GET
+    @Path("{shortId}/seen")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response seen(@PathParam("shortId") final String shortId) {
+        // update seen count
+        long seenCount = badgeRepo.see(shortId);
+        return Response.ok(String.format("{\"seen\": %d}", seenCount)).build();
     }
 }

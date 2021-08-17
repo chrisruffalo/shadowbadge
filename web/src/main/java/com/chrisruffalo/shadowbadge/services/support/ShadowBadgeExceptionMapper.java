@@ -1,5 +1,6 @@
 package com.chrisruffalo.shadowbadge.services.support;
 
+import com.chrisruffalo.shadowbadge.exceptions.AlreadyClaimedBadgeException;
 import com.chrisruffalo.shadowbadge.exceptions.ShadowbadgeException;
 import io.quarkus.qute.TemplateException;
 import org.slf4j.Logger;
@@ -36,6 +37,9 @@ public class ShadowBadgeExceptionMapper implements javax.ws.rs.ext.ExceptionMapp
             } else {
                 logger.error("{}: {}", throwable.getClass().getName(), throwable.getMessage());
             }
+        } else if(throwable instanceof AlreadyClaimedBadgeException) {
+            final AlreadyClaimedBadgeException alreadyClaimedBadgeException = (AlreadyClaimedBadgeException) throwable;
+            logger.error("Badge {} already claimed by user {}", alreadyClaimedBadgeException.getBadge(), alreadyClaimedBadgeException.getOwner());
         } else {
             logger.error(throwable.getMessage());
         }
