@@ -4,3 +4,7 @@ syndo:
       from: registry.hub.docker.com/fabric8/java-centos-openjdk11-jdk
       path: ${basedir}/target
       storage: vfs
+    - name: shadowbadge-native
+      from: registry.access.redhat.com/ubi8/ubi-minimal
+      path: ${basedir}/target
+

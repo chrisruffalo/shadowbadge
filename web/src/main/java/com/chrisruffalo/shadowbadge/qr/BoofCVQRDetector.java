@@ -37,7 +37,7 @@ public class BoofCVQRDetector implements QrDetector {
                 }
             }
         } catch (Exception e) {
-            throw new ShadowbadgeException("Could not find QR value (boofcv)", e.getMessage());
+            throw new ShadowbadgeException(e, "Could not find QR value (boofcv): %s", e.getMessage());
         }
 
         return "";

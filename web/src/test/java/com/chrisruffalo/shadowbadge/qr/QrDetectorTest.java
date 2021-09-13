@@ -1,7 +1,7 @@
 package com.chrisruffalo.shadowbadge.qr;
 
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -21,12 +21,12 @@ public class QrDetectorTest {
             try {
                 final String result = detector.getQrText(testCase.image);
                 if (testCase.isNotDetected()) {
-                    Assert.assertEquals(testCase.getFileName(), "", result);
+                    Assertions.assertEquals("", result, testCase.getFileName());
                 } else {
-                    Assert.assertEquals(testCase.getFileName(), testCase.getExpected(), result);
+                    Assertions.assertEquals(testCase.getExpected(), result, testCase.getFileName());
                 }
             } catch (Exception ex) {
-                Assert.fail(ex.getMessage());
+                Assertions.fail(ex.getMessage());
             }
         });
     }

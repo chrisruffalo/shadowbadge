@@ -24,7 +24,7 @@ public class ZxingQRDetector implements QrDetector {
         } catch (NotFoundException nfe) {
             return "";
         } catch (Exception e) {
-            throw new ShadowbadgeException("Could not find QR value (zxing)", e.getMessage());
+            throw new ShadowbadgeException(e, "Could not find QR value (zxing): %s", e.getMessage());
         }
     }
 }

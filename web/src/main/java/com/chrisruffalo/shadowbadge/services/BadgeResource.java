@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import javax.print.attribute.standard.Media;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
@@ -80,7 +79,7 @@ public class BadgeResource extends BaseResource {
             return Response.seeOther(URI.create(redirection.getRedirect(String.format("/badges/%s/detail.html", badgeId), this.servletRequest))).build();
         } catch (ShadowbadgeException e) {
             // this is "better-ish"
-            return Response.ok(this.badges(userId, e)).build();
+            return Response.ok(this.listOwnedBadges(userId, e)).build();
         }
     }
 
@@ -89,11 +88,12 @@ public class BadgeResource extends BaseResource {
     @Path("list.html")
     @Produces(MediaType.TEXT_HTML)
     @NoCache
-    public TemplateInstance badges() throws ShadowbadgeException {
-        return this.badges(this.getCurrentUserId(), null);
+    public TemplateInstance listOwnedBadges() throws ShadowbadgeException {
+        return this.listOwnedBadges(this.getCurrentUserId(), null);
     }
 
-    private TemplateInstance badges(final String userId, final Exception error) {
+    private TemplateInstance listOwnedBadges(final String userId, final Exception error) {
+
         // get by owner id
         final List<Badge> list = badgeRepo.listForOwner(userId);
         final TemplateInstance badgeInstance = this.list.data("badges", list);
@@ -101,8 +101,10 @@ public class BadgeResource extends BaseResource {
         if (error != null) {
             badgeInstance.data("error", true);
             badgeInstance.data("errorMsg", error.getMessage());
+            logger.error("error getting badges for userId='{}': {}", userId, error.getMessage());
         } else {
             badgeInstance.data("error", false);
+            logger.info("got {} badges for userId='{}'", list.size(), userId);
         }
 
         badgeInstance.data("identity", this.getIdentity());
@@ -152,7 +154,7 @@ public class BadgeResource extends BaseResource {
         // check owner id
         final String userId = this.getCurrentUserId();
         if (userId == null || !userId.equalsIgnoreCase(badge.getOwnerId())) {
-            return Response.ok(this.badges(userId, new ShadowbadgeException("You have no claim on the selected badge."))).build();
+            return Response.ok(this.listOwnedBadges(userId, new ShadowbadgeException("You have no claim on the selected badge."))).build();
         }
 
         final BadgeInfo info = badge.getInfo();

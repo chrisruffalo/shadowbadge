@@ -8,12 +8,12 @@
             <div class="form-group">
                 <label for="inputDisplayName">Display Name</label>
                 <input type="text" value="{info.displayName}" class="form-control" id="inputDisplayName" name="displayName" aria-describedby="inputDisplayName" placeholder="My favorite badge">
-                <small id="inputDisplayNameHelp" class="form-text text-muted">This identifies the badge uniquely.</small>
+                <small id="inputDisplayNameHelp" class="form-text text-muted">This identifies the badge uniquely. (Only seen by you in the badge list.)</small>
             </div>
             <div class="form-group">
                 <label for="inputHeader">Badge Header</label>
                 <input type="text" maxlength="24" value="{info.heading}" class="form-control" id="inputHeader" name="heading" aria-describedby="inputHeader" placeholder="Shad Person">
-                <small id="inputHeaderHelp" class="form-text text-muted">This is the text header part of the badge. Suggestion: a name you call yourself. (Max 24 characters.)</small>
+                <small id="inputHeaderHelp" class="form-text text-muted">This is the text header at the top of the badge. Suggestion: a name you call yourself. (Max 24 characters.)</small>
             </div>
             <div class="form-group">
                 <label for="badgeLayoutSelect">Layout Style</label>
@@ -54,17 +54,17 @@
             <div class="form-group">
                 <label for="qrTypeSelect">QR Code Type</label>
                 <select class="form-control" id="qrTypeSelect" name="qrType" onchange="showHideCustomQr()">
-                    <option value="RELATIVE" label="Shadowbadge Link" {util:enumMatches(info.qrType, 'RELATIVE') ? 'selected' : ''}>Shadowbadge Link</option>
-                    <option value="CUSTOM" label="Custom QR Code" {util:enumMatches(info.qrType, 'CUSTOM') ? 'selected' : ''}>Custom Data</option>
+                    <option value="RELATIVE" label="Shadowbadge 'Seen' Link" {util:enumMatches(info.qrType, 'RELATIVE') ? 'selected' : ''}>Shadowbadge "Seen" Link</option>
+                    <option value="CUSTOM" label="User Provided QR Content" {util:enumMatches(info.qrType, 'CUSTOM') ? 'selected' : ''}>User Provided QR Content</option>
                     <option value="NONE" label="No QR Code" {util:enumMatches(info.qrType, 'NONE') ? 'selected' : ''}>No QR Code</option>
                 </select>
-                <small id="qrTypeSelectHelp" class="form-text text-muted">The type of QR code that will be shown on the badge.</small>
+                <small id="qrTypeSelectHelp" class="form-text text-muted">The type and content of QR code that will be shown on the badge.</small>
             </div>
             <div id="customQrFormRow" class="form-row {util:enumMatches(info.qrType, 'CUSTOM') ? '' : 'd-none'}" >
                 <div id="customQRFormGroup" class="form-group col-lg-11 col-10">
-                    <label for="inputCustomQR">Custom QR Code</label>
-                    <input id="inputCustomQR" type="text" maxlength="400" value="{info.qrCode}" class="form-control qrcode-text" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
-                    <small id="inputCustomQRHelp" class="form-text text-muted">Data that will be used for custom QR code on badge. (Max 400 characters.)</small>
+                    <label for="inputCustomQR">QR Content</label>
+                    <input id="inputCustomQR" type="text" maxlength="400" value="{util:enumMatches(info.qrType, 'CUSTOM') ? info.qrCode : ''}" class="form-control qrcode-text" name="customQrCode" aria-describedby="inputRow4" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                    <small id="inputCustomQRHelp" class="form-text text-muted">Data that will be used to generate the QR code on badge. (Max 400 characters.)</small>
                 </div>
                 <div class="col-lg-1 col-2">
                     <!-- qr bits from: https://www.sitepoint.com/create-qr-code-reader-mobile-website/ -->

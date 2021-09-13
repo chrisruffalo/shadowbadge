@@ -2,6 +2,8 @@ apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
 metadata:
   name: "dc"
+  annotations:
+    template.alpha.openshift.io/wait-for-ready: "true"
 spec:
   template:
     spec:
@@ -23,6 +25,26 @@ spec:
                 configMapKeyRef:
                   name: database-config
                   key: DATABASE_PASSWORD
+          livenessProbe:
+            exec:
+              command:
+                - /usr/libexec/check-container
+                - --live
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - /usr/libexec/check-container
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          volumeMounts:
+            - mountPath: /var/lib/pgsql/data
+              name: database-data
           ports:
             - containerPort: 5432
               protocol: TCP
+      volumes:
+        - name: database-data
+          persistentVolumeClaim:
+            claimName: claim

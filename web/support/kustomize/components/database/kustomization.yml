@@ -3,6 +3,7 @@ bases:
 namePrefix: shadowbadge-database-
 resources:
   - database-is.yml
+  - database-pvc.yml
 patches:
   - path: database-dc.yml
   - path: database-service.yml

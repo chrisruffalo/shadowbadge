@@ -21,3 +21,8 @@ nameReference:
     fieldSpecs:
       - path: spec/selector/deploymentConfig
         kind: DeploymentConfig
+  # enable pvcs to be referenced in volumes
+  - kind: PersistentVolumeClaim
+    fieldSpecs:
+      - path: spec/template/spec/volumes/persistentVolumeClaim/claimName
+        kind: DeploymentConfig

@@ -11,3 +11,8 @@ consumers:
     email: "delete@delete.com"
     authId: "deleteDeleteDelete"
     displayName: "Delete Me"
+badges:
+  - id: "test-owned-badge"
+    badgeId: "test-id-1-badge"
+    displayName: "Test Group"
+    ownerId: "0001-000-000-333"

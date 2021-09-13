@@ -6,10 +6,10 @@
   <artifactId>shadowbadge</artifactId>
   <version>${revision}</version>
   <properties>
-    <revision>1.0.9</revision>
+    <revision>1.0.10</revision>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <surefire-plugin.version>2.22.2</surefire-plugin.version>
-    <quarkus.version>2.1.1.Final</quarkus.version>
+    <quarkus.version>2.2.1.Final</quarkus.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
@@ -73,18 +73,11 @@
       <version>1.2.0</version>
     </dependency>
 
-    <!-- name generation -->
+    <!-- badge shortId/name generation -->
     <dependency>
       <groupId>com.oblac</groupId>
       <artifactId>nomen-est-omen</artifactId>
       <version>2.1.0</version>
-    </dependency>
-
-    <!-- apache commons imaging for speed testing over imageio -->
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-imaging</artifactId>
-      <version>1.0-alpha1</version>
     </dependency>
 
     <dependency>
@@ -126,7 +119,6 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jdbc-h2</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.github.database-rider</groupId>
@@ -137,6 +129,20 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-test-security</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- benchmarks fall under the test scope -->
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-core</artifactId>
+      <version>1.33</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-generator-annprocess</artifactId>
+      <version>1.33</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -176,79 +182,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.0.2</version>
-        <executions>
-          <execution>
-            <id>docker-copy-jvm-resources</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/deployments/jvm</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.basedir}/support/docker/jvm/</directory>
-                  <includes>
-                    <include>*</include>
-                  </includes>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}</directory>
-                  <includes>
-                    <include>*-runner.jar</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-          <execution>
-            <id>docker-copy-jvm-classpath-resources</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/deployments/jvm/lib</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.build.directory}/lib</directory>
-                  <includes>
-                    <include>*</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-          <execution>
-            <id>docker-copy-native-resources</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/deployments/native</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.basedir}/support/docker/native/</directory>
-                  <includes>
-                    <include>*</include>
-                  </includes>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}</directory>
-                  <includes>
-                    <include>*-runner</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire-plugin.version}</version>
         <configuration>
@@ -268,25 +201,14 @@
           <name>native</name>
         </property>
       </activation>
+      <properties>
+        <quarkus.package.type>native</quarkus.package.type>
+        <quarkus.native.additional-build-args>--initialize-at-run-time=com.oblac.nomen.Nomen</quarkus.native.additional-build-args>
+      </properties>
       <build>
         <plugins>
           <plugin>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-maven-plugin</artifactId>
-            <version>${quarkus.version}</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>native-image</goal>
-                </goals>
-                <configuration>
-                  <enableHttpUrlHandler>true</enableHttpUrlHandler>
-                  <additionalBuildArgs/>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <version>${surefire-plugin.version}</version>
             <executions>
@@ -296,9 +218,11 @@
                   <goal>verify</goal>
                 </goals>
                 <configuration>
-                  <systemProperties>
+                  <systemPropertyVariables>
                     <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
-                  </systemProperties>
+                    <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    <maven.home>${maven.home}</maven.home>
+                  </systemPropertyVariables>
                 </configuration>
               </execution>
             </executions>
@@ -362,77 +286,53 @@
       </build>
     </profile>
 
-    <!--
-      profile to deploy native image build
-      requires:
-      - oc client installed
-      - oc client logged in
-      - oc client in proper project namespace
-    -->
     <profile>
-      <id>ocp</id>
+      <id>syndo-native</id>
       <activation>
-        <property>
-          <name>ocp</name>
-        </property>
+        <activeByDefault>false</activeByDefault>
       </activation>
       <build>
         <plugins>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.5.0</version>
+            <artifactId>maven-resources-plugin</artifactId>
+            <version>3.2.0</version>
             <executions>
               <execution>
-                <phase>install</phase>
+                <id>copy-resources</id>
+                <phase>validate</phase>
                 <goals>
-                  <goal>exec</goal>
+                  <goal>copy-resources</goal>
                 </goals>
                 <configuration>
-                  <executable>oc</executable>
-                  <arguments>
-                    <argument>start-build</argument>
-                    <argument>shadowbadge-app-jvm</argument>
-                    <argument>-F</argument>
-                    <argument>--from-dir</argument>
-                    <argument>${project.build.directory}/deployments/jvm</argument>
-                  </arguments>
+                  <outputDirectory>${basedir}/target</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>support/buildah/native</directory>
+                      <filtering>false</filtering>
+                    </resource>
+                  </resources>
                 </configuration>
               </execution>
             </executions>
           </plugin>
-        </plugins>
-      </build>
-    </profile>
-
-    <profile>
-      <id>ocp-native</id>
-      <activation>
-        <property>
-          <name>ocp-native</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.5.0</version>
+            <groupId>io.github.chrisruffalo</groupId>
+            <artifactId>syndo-maven-plugin</artifactId>
+            <version>0.4.1</version>
             <executions>
               <execution>
+                <id>build</id>
                 <phase>install</phase>
                 <goals>
-                  <goal>exec</goal>
+                  <goal>build</goal>
                 </goals>
                 <configuration>
-                  <executable>oc</executable>
-                  <arguments>
-                    <argument>start-build</argument>
-                    <argument>shadowbadge-app-native</argument>
-                    <argument>-F</argument>
-                    <argument>--from-dir</argument>
-                    <argument>${project.build.directory}/deployments/native</argument>
-                  </arguments>
+                  <buildFile>support/syndo/build.yml</buildFile>
+                  <components>shadowbadge-native</components>
+                  <skipSslVerification>true</skipSslVerification>
+                  <properties>
+                    <basedir>${project.basedir}</basedir>
+                  </properties>
                 </configuration>
               </execution>
             </executions>
