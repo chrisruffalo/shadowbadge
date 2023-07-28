@@ -90,7 +90,7 @@
     <dependency>
       <groupId>org.boofcv</groupId>
       <artifactId>boofcv-core</artifactId>
-      <version>0.38</version>
+      <version>0.43.1</version>
     </dependency>
 
     <!-- zebra crossing qr detection -->
